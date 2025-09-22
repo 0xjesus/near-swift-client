@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+.localized
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
