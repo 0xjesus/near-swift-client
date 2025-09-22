@@ -1,0 +1,40 @@
+generate:
+  - types
+  - client
+accessModifier: public
+filter:
+  operations:
+    # Core RPC methods
+    - status
+    - block
+    - block_effects
+    - chunk
+    - tx
+    - send_tx
+    - broadcast_tx_async
+    - broadcast_tx_commit
+    - validators
+    - gas_price
+    - query
+    - changes
+    - network_info
+    - health
+    - client_config
+    - genesis_config
+    - light_client_proof
+    - next_light_client_block
+    - maintenance_windows
+    
+    # Experimental methods
+    - EXPERIMENTAL_changes
+    - EXPERIMENTAL_changes_in_block
+    - EXPERIMENTAL_congestion_level
+    - EXPERIMENTAL_genesis_config
+    - EXPERIMENTAL_light_client_block_proof
+    - EXPERIMENTAL_light_client_proof
+    - EXPERIMENTAL_maintenance_windows
+    - EXPERIMENTAL_protocol_config
+    - EXPERIMENTAL_receipt
+    - EXPERIMENTAL_split_storage_info
+    - EXPERIMENTAL_tx_status
+    - EXPERIMENTAL_validators_ordered

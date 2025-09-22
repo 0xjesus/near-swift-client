@@ -1,16 +1,31 @@
 # macOS
 .DS_Store
-.localized
 
-# Swift Package Manager
+# Swift
 .build/
 .swiftpm/
-
-# Xcode
 *.xcodeproj
 *.xcworkspace
-xcuserdata/
+DerivedData/
+*.playground
 
-# Playgrounds
-timeline.xctimeline
-playground.xcworkspace
+# Package resolved
+Package.resolved
+
+# Coverage
+*.lcov
+coverage/
+.codecov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+test-results/
+*.xcresult
+
+# Generated
+Packages/*/Sources/*/Generated/

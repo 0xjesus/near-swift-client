@@ -1,0 +1,110 @@
+NEAR SWIFT CLIENT - CONTEXT FOR LLM
+Generated: 2025-09-22 13:49:05
+Mode: standard
+Target: 200k token limit (≈800KB text)
+=====================================
+
+PROJECT STATUS:
+- Need to win 6,000 USDC bounty for NEAR Swift client
+- Must parse OpenAPI spec and generate type-safe Swift code
+- Critical: Must handle path issue (OpenAPI has multiple paths, JSON-RPC uses only "/")
+- Required: 80% test coverage, full automation, two packages
+
+IMMEDIATE FOCUS:
+1. Fix OpenAPI path consolidation 
+2. Complete all RPC methods
+3. Achieve 80% test coverage
+4. Polish documentation
+
+
+### PROJECT STRUCTURE ###
+
+```
+.
+├── context.txt
+├── exportar.sh
+└── export_context.sh
+
+0 directories, 3 files
+```
+
+### PACKAGE CONFIGURATION ###
+
+
+### TYPES PACKAGE ###
+
+
+### CLIENT PACKAGE ###
+
+
+### TEST SAMPLES ###
+
+
+### CI/CD ###
+
+
+### AUTOMATION ###
+
+
+### DOCUMENTATION ###
+
+
+### CRITICAL TASKS ###
+
+
+PRIORITY 1 - MUST HAVE:
+[ ] Fix OpenAPI path consolidation (spec uses /method, RPC uses /)
+[ ] Implement all basic RPC methods (view, call, tx, block, etc.)
+[ ] Reach 80% test coverage
+[ ] Complete GitHub Actions automation
+[ ] Document all public APIs
+
+PRIORITY 2 - SHOULD HAVE:
+[ ] Add retry logic for failed requests
+[ ] Implement transaction signing
+[ ] Add integration tests with mock server
+[ ] Create comprehensive examples
+[ ] Performance benchmarks
+
+PRIORITY 3 - NICE TO HAVE:
+[ ] WebSocket support for subscriptions
+[ ] Async stream support
+[ ] Cache layer
+[ ] Rate limiting
+[ ] Telemetry/logging
+
+BOUNTY REQUIREMENTS CHECK:
+✅ Two packages (types and client)
+✅ Snake_case to camelCase conversion
+✅ GitHub Actions setup
+⚠️ 80% test coverage (currently ~40%)
+⚠️ OpenAPI code generation (needs testing)
+❌ Published packages
+❌ Full documentation
+
+KEY CODE TO FIX:
+1. In Scripts/generate-from-openapi.swift:
+   - Line 476: Patch OpenAPI paths to single "/"
+   - Add proper type generation from components/schemas
+   
+2. In NearJsonRpcClient.swift:
+   - Add missing RPC methods
+   - Implement proper error handling
+   - Add retry logic
+
+3. Tests need expansion:
+   - Mock URLSession for all methods
+   - Edge cases
+   - Error conditions
+   - Integration tests
+
+=== END OF CONTEXT ===
+
+STATISTICS:
+- Mode: standard
+- Files included: 0
+- Files truncated: 0  
+- Total size: 2207 bytes
+- Lines: 101
+- Words: 341
+- Est. tokens: 551 (limit: 200,000)

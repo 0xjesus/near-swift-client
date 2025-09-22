@@ -1,0 +1,48 @@
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+  - file_length
+  - type_body_length
+  - function_body_length
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - collection_alignment
+  - contains_over_filter_count
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - modifier_order
+  - multiline_arguments
+  - multiline_parameters
+  - operator_usage_whitespace
+  - prefer_zero_over_explicit_init
+  - sorted_first_last
+  - trailing_closure
+
+included:
+  - Packages
+  - Examples
+
+excluded:
+  - .build
+  - .swiftpm
+  - Packages/*/Sources/*/Generated
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 50
+    error: 60
+  allowed_symbols: "_"
+
+type_name:
+  min_length:
+    warning: 3
+    error: 2
+  max_length:
+    warning: 50
+    error: 60

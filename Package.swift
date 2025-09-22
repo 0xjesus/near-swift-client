@@ -3,37 +3,35 @@ import PackageDescription
 
 let package = Package(
     name: "near-swift-sdk",
-    platforms: [.macOS(.v12), .iOS(.v15)],
+    platforms: [.iOS(.v14), .macOS(.v11)],
     products: [
-        .library(name: "NearRPCTypes", targets: ["NearRPCTypes"]),
-        .library(name: "NearRPCClient", targets: ["NearRPCClient"]),
+        .library(name: "NearJsonRpcTypes", targets: ["NearJsonRpcTypes"]),
+        .library(name: "NearJsonRpcClient", targets: ["NearJsonRpcClient"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.0.0"),
+        // Opcional para pruebas de concurrencia/async, pero Swift estándar basta
     ],
     targets: [
         .target(
-            name: "NearRPCTypes",
-            dependencies: [
-                .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime")
-            ],
-            path: "Packages/NearRPCTypes/Sources/NearRPCTypes",
-            plugins: [
-                .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")
-            ]
+            name: "NearJsonRpcTypes",
+            path: "Packages/NearJsonRpcTypes/Sources",
+            resources: []
         ),
         .target(
-            name: "NearRPCClient",
-            dependencies: ["NearRPCTypes"],
-            path: "Packages/NearRPCClient/Sources/NearRPCClient"
+            name: "NearJsonRpcClient",
+            dependencies: ["NearJsonRpcTypes"],
+            path: "Packages/NearJsonRpcClient/Sources",
+            resources: []
         ),
-        // --- CORRECCIÓN FINAL ---
-        // Le decimos a la prueba que también depende directamente de NearRPCTypes
         .testTarget(
-            name: "NearRPCClientTests",
-            dependencies: ["NearRPCClient", "NearRPCTypes"],
-            path: "Packages/NearRPCClient/Tests/NearRPCClientTests"
-        )
+            name: "NearJsonRpcTypesTests",
+            dependencies: ["NearJsonRpcTypes"],
+            path: "Packages/NearJsonRpcTypes/Tests"
+        ),
+        .testTarget(
+            name: "NearJsonRpcClientTests",
+            dependencies: ["NearJsonRpcClient", "NearJsonRpcTypes"],
+            path: "Packages/NearJsonRpcClient/Tests"
+        ),
     ]
 )
