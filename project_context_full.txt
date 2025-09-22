@@ -23,7 +23,7 @@ Current directory structure:
 │   └── SwiftUIDemo
 │       └── ContentView.swift
 ├── LICENSE
-├── near-swift-sdk
+├── near-swift-client
 │   ├── Documentation
 │   ├── Examples
 │   ├── Package.swift
@@ -2217,7 +2217,7 @@ OPENAPI SPECIFICATION
 ================================================================================
 
 --------------------------------------------------------------------------------
-FILE: ./near-swift-sdk/Sources/NearRPCTypes/openapi.json
+FILE: ./near-swift-client/Sources/NearRPCTypes/openapi.json
 DESCRIPTION: OpenAPI specification
 LINES: 0
 --------------------------------------------------------------------------------

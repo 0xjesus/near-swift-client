@@ -10,4 +10,4 @@ jobs:
       - uses: google-github-actions/release-please-action@v4
         with:
           release-type: simple
-          package-name: near-swift-sdk
+          package-name: near-swift-client
