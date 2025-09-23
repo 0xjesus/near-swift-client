@@ -13,9 +13,10 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
-          # Usamos el modo "manifest" porque ya tienes release-please-config.json y release-please-manifest.json
-          command: manifest
+          # manifest mode: solo necesitas estos dos si ya tienes los archivos en el repo
           config-file: release-please-config.json
           manifest-file: release-please-manifest.json
+          # opcional si tu default branch no fuera main:
+          # target-branch: main
