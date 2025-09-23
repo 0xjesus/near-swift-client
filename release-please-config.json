@@ -1,12 +1,9 @@
 {
-    "packages": {
-      ".": {
-        "release-type": "simple",
-        "bump-minor-pre-major": true,
-        "bump-patch-for-minor-pre-major": true,
-        "include-v-in-tag": true
-      }
-    },
-    "bootstrap-sha": ""
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "bootstrap-sha": "de009ec8c42186c5ea2d67a056e0c34370016ceb"
+    }
   }
-  
+}
