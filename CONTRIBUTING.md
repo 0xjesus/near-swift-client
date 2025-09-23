@@ -1,38 +1,92 @@
-# Contributing to NEAR Swift Client
+````markdown
+# Contributing to NEAR Swift JSON-RPC Client
 
-Thank you for your interest in contributing! 
+We welcome contributions from the community! 🚀
+
+---
+
+## How to Contribute
+
+1. **Fork** the repository on GitHub.
+2. Create a new branch for your feature or fix:
+   ```bash
+   git checkout -b feat/my-feature
+````
+
+3. Make your changes following the [Code Style](#code-style) guidelines.
+4. Commit using [Conventional Commits](https://www.conventionalcommits.org/):
+
+   * `feat(types): add new struct for AccountBalance`
+   * `fix(client): correct error handling in RPC calls`
+   * `chore: update CI workflow`
+5. Push your branch and open a **Pull Request** to `main`.
+
+---
 
 ## Development Setup
 
-1. Clone the repository
-2. Ensure you have Swift 5.9+ installed
-3. Run `swift build` to verify setup
+### Requirements
+
+* Swift 5.9 or later
+* macOS 13+ or Linux with Swift toolchain
+* GitHub CLI (`gh`) for workflow triggers (optional)
+
+### Build & Test
+
+```bash
+swift build
+swift test --enable-code-coverage
+```
+
+### Run RPC Smoke Test
+
+```bash
+swift run
+```
+
+---
 
 ## Code Style
 
-We use SwiftLint for code style. Run `swiftlint` before committing.
+* Use Swift’s native `Codable` for all serialization/deserialization.
+* Prefer **`camelCase`** for Swift naming (auto-converted from API `snake_case`).
+* Keep packages minimal and focused:
 
-## Testing
+  * `NearJsonRpcTypes`: *types only*.
+  * `NearJsonRpcClient`: *RPC methods only*.
+* Always include **unit tests** for new types or client methods.
 
-- Write tests for new features
-- Maintain 80%+ code coverage
-- Run `swift test` before submitting PRs
+---
 
-## Pull Request Process
+## Automated Workflows
 
-1. Fork and create a feature branch
-2. Make your changes with tests
-3. Update documentation as needed
-4. Submit PR with clear description
+* **CI (Swift CI):** builds and tests every push/PR.
+* **Regeneration:** regenerates from OpenAPI spec (manual + nightly).
+* **Release:** versioning and tagging are automated with `release-please`.
 
-## Code Generation
-
-The client is partially auto-generated. To regenerate:
+To run regeneration manually:
 
 ```bash
-swift run generate-from-openapi
+gh workflow run manual-regenerate.yml
 ```
 
-## Questions?
+---
 
-Join our [Telegram community](https://t.me/NEAR_Tools_Community_Group).
+## Reporting Issues
+
+* Use the [GitHub Issues](https://github.com/0xjesus/near-swift-client/issues) page.
+* Provide:
+
+  * Steps to reproduce
+  * Expected behavior
+  * Actual behavior
+  * Logs or screenshots if available
+
+---
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+
+```
+```
