@@ -2,7 +2,7 @@ name: Regenerate from OpenAPI
 
 on:
   schedule:
-    - cron: "0 3 * * *"   # diario 03:00 UTC
+    - cron: "0 3 * * *"
   workflow_dispatch:
   push:
     branches: ["main"]
