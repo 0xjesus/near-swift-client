@@ -28,7 +28,7 @@ public extension String {
 }
 
 /// Custom JSON Decoder with snake_case to camelCase conversion
-public class NearJSONDecoder: JSONDecoder {
+public final class NearJSONDecoder: JSONDecoder, @unchecked Sendable {
     public override init() {
         super.init()
         self.keyDecodingStrategy = .custom { keys in
@@ -40,7 +40,7 @@ public class NearJSONDecoder: JSONDecoder {
 }
 
 /// Custom JSON Encoder with camelCase to snake_case conversion
-public class NearJSONEncoder: JSONEncoder {
+public final class NearJSONEncoder: JSONEncoder, @unchecked Sendable {
     public override init() {
         super.init()
         self.keyEncodingStrategy = .custom { keys in
