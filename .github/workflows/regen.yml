@@ -1,0 +1,74 @@
+name: Regenerate from OpenAPI
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # diario a las 03:00 UTC
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: regen-openapi
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regen:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Fetch OpenAPI (nearcore or fallback)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p Scripts
+          SCHEMA="Scripts/openapi.json"
+          rm -f "$SCHEMA"
+
+          # Intento 1: nearcore (ruta conocida; puede cambiar en el tiempo)
+          curl -fsSL https://raw.githubusercontent.com/near/nearcore/master/tools/openapi/rpc.json -o "$SCHEMA" || true
+
+          # Intento 2: fallback comunitario si el primero falla/no existe
+          if [[ ! -s "$SCHEMA" ]]; then
+            curl -fsSL https://raw.githubusercontent.com/PolyProgrammist/near-openapi-client/main/openapi.json -o "$SCHEMA" || true
+          fi
+
+          if [[ ! -s "$SCHEMA" ]]; then
+            echo "ERROR: No se pudo obtener OpenAPI desde fuentes conocidas"
+            exit 1
+          fi
+          echo "OpenAPI guardado en $SCHEMA (size: $(wc -c < "$SCHEMA") bytes)"
+
+      - name: Regenerate Swift types/client
+        run: swift Scripts/generate-from-openapi.swift
+
+      - name: Build
+        run: swift build -v
+
+      - name: Test (with coverage)
+        run: swift test --enable-code-coverage
+
+      - name: Create PR with changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: regen from OpenAPI + tests"
+          branch: chore/regen-openapi
+          title: "chore: regen from OpenAPI + tests"
+          body: |
+            Regeneración automática de tipos/cliente desde OpenAPI.
+            - Forzado de JSON-RPC vía POST "/"
+            - Conversión snake_case → camelCase
+            - Build & tests verdes en CI
+          labels: |
+            automated
+            openapi
+          delete-branch: true
