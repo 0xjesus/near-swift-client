@@ -1,8 +1,0 @@
-import Foundation
-
-// Necesario porque ChunkView: Equatable contiene un ChunkHeader? -> debe ser Equatable
-extension ChunkHeader: Equatable {}
-
-// Por si en algún sitio comparan cabeceras o bloques
-extension BlockHeader: Equatable {}
-extension Block: Equatable {}

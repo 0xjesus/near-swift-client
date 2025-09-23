@@ -29,3 +29,7 @@ test-results/
 
 # Generated
 Packages/*/Sources/*/Generated/
+
+# Backups creados por scripts
+**/.backup/
+*.bak

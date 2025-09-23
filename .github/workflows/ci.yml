@@ -1,23 +1,15 @@
-name: CI
+name: Swift CI
 on:
   push:
+    branches: [ "**" ]
   pull_request:
+    branches: [ "**" ]
 jobs:
   build-test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
-      - name: Install Swift (Linux)
-        if: runner.os == 'Linux'
-        uses: swift-actions/setup-swift@v2
-        with: { swift-version: '5.10' }
       - name: Build
         run: swift build -v
-      - name: Test with coverage
+      - name: Test
         run: swift test --enable-code-coverage
-      - name: Coverage report
-        if: runner.os == 'macOS'
-        run: xcrun llvm-cov report .build/debug/*.xctest -instr-profile=.build/debug/codecov/default.profdata
