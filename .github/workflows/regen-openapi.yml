@@ -2,7 +2,7 @@ name: Regenerate from OpenAPI
 
 on:
   schedule:
-    - cron: "0 3 * * *"   # diario a las 03:00 UTC
+    - cron: "0 3 * * *"   # diario 03:00 UTC
   workflow_dispatch:
   push:
     branches: ["main"]
@@ -23,6 +23,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+
       - name: Swift version
         run: swift --version
 
@@ -33,15 +38,10 @@ jobs:
           mkdir -p Scripts
           SCHEMA="Scripts/openapi.json"
           rm -f "$SCHEMA"
-
-          # Intento 1: nearcore (ruta conocida; puede cambiar en el tiempo)
           curl -fsSL https://raw.githubusercontent.com/near/nearcore/master/tools/openapi/rpc.json -o "$SCHEMA" || true
-
-          # Intento 2: fallback comunitario si el primero falla/no existe
           if [[ ! -s "$SCHEMA" ]]; then
             curl -fsSL https://raw.githubusercontent.com/PolyProgrammist/near-openapi-client/main/openapi.json -o "$SCHEMA" || true
           fi
-
           if [[ ! -s "$SCHEMA" ]]; then
             echo "ERROR: No se pudo obtener OpenAPI desde fuentes conocidas"
             exit 1
@@ -64,11 +64,9 @@ jobs:
           branch: chore/regen-openapi
           title: "chore: regen from OpenAPI + tests"
           body: |
-            Regeneración automática de tipos/cliente desde OpenAPI.
-            - Forzado de JSON-RPC vía POST "/"
-            - Conversión snake_case → camelCase
+            Regeneración automática desde OpenAPI.
+            - Forzado JSON-RPC por POST "/"
+            - snake_case → camelCase
             - Build & tests verdes en CI
-          labels: |
-            automated
-            openapi
+          labels: automated, openapi
           delete-branch: true
