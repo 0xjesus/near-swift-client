@@ -18,3 +18,13 @@ print(latest.header?.height ?? 0)
 
 let account = try await client.viewAccount(.init(accountId: "account.rpc-examples.testnet", finality: .final))
 print(account.amount?.value ?? "0")
+## QuickStart (macOS)
+
+```bash
+swift build
+swift test --enable-code-coverage
+```
+
+### Smoke RPC (mainnet)
+```bash
+```
