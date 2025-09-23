@@ -3,7 +3,8 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "bootstrap-sha": "de009ec8c42186c5ea2d67a056e0c34370016ceb"
+      "bootstrap-sha": "de009ec8c42186c5ea2d67a056e0c34370016ceb",
+      "release-as": "0.1.1"
     }
   }
 }
