@@ -1,13 +1,17 @@
+# .github/workflows/release-please.yml
 name: Release Please
-
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release-please:
@@ -15,8 +19,6 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
-          # manifest mode: solo necesitas estos dos si ya tienes los archivos en el repo
+          token: ${{ secrets.GH_TOKEN }}
           config-file: release-please-config.json
           manifest-file: release-please-manifest.json
-          # opcional si tu default branch no fuera main:
-          # target-branch: main
