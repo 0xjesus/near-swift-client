@@ -1,4 +1,7 @@
 # NEAR Swift SDK: NearJsonRpcClient + NearJsonRpcTypes
+![CI](https://github.com/<ORG>/<REPO>/actions/workflows/ci.yml/badge.svg)
+![Release Please](https://github.com/<ORG>/<REPO>/actions/workflows/release-please.yml/badge.svg)
+
 
 Cliente **type-safe** para el **JSON-RPC** de NEAR en Swift. Generación automática desde **OpenAPI** con **consolidación de paths -> “/”** (compatibilidad con JSON‑RPC).
 

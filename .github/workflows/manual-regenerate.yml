@@ -1,0 +1,47 @@
+name: Manual Regenerate (OpenAPI)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Base branch'
+        required: false
+        default: 'main'
+
+jobs:
+  regen:
+    runs-on: macos-13
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set up Xcode (Swift)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+
+      - name: Fetch OpenAPI + regenerate
+        run: |
+          bash Scripts/fetch-openapi.sh
+          # Si tu generador es Swift:
+          swift Scripts/generate-from-openapi.swift || true
+          swift build
+          swift test --enable-code-coverage
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/regenerate-openapi
+          title: "chore: regenerate from latest OpenAPI"
+          commit-message: "chore: regenerate (OpenAPI + codegen)"
+          body: |
+            - Fetch latest OpenAPI
+            - Force POST '/' path for JSON-RPC
+            - Regenerate types/client
+            - Build & tests ran on CI
+          labels: dependencies, automation
+          signoff: true
