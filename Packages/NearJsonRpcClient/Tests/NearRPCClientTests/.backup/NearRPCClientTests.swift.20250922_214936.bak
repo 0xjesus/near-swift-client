@@ -1,6 +1,6 @@
 import XCTest
-@testable import NearJsonRpcClient
-import NearJsonRpcTypes
+@testable import NearRPCClient
+import NearRPCTypes
 import OpenAPIRuntime
 import HTTPTypes
 

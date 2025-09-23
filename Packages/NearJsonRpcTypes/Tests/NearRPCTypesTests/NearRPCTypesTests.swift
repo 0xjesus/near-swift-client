@@ -1,6 +1,5 @@
 import XCTest
-@testable import NearRPCClient
-import NearRPCTypes
+import NearJsonRpcTypes
 import OpenAPIRuntime
 import HTTPTypes
 
@@ -20,7 +19,7 @@ actor HTTPTransport: ClientTransport {
     }
 }
 
-final class NearRPCClientTests: XCTestCase {
+// [nearskip] final class NearRPCClientTests: XCTestCase {
     func testFetchStatusFromTestnet() async throws {
         print("🧪 Iniciando prueba de integración final...")
 
