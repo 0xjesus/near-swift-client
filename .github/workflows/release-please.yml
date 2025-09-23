@@ -1,9 +1,9 @@
-name: release-please
+name: Release Please
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v4
         with:
-          release-type: simple
-          package-name: near-swift-client
-          manifest-file: release-please-manifest.json
+          # Usamos el modo "manifest" porque ya tienes release-please-config.json y release-please-manifest.json
+          command: manifest
           config-file: release-please-config.json
+          manifest-file: release-please-manifest.json
