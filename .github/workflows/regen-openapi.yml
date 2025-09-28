@@ -60,13 +60,13 @@ jobs:
       - name: Create PR with changes
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "chore: regen from OpenAPI + tests"
+          commit-message: "fix(openapi): regenerate Swift types & client from spec"
           branch: chore/regen-openapi
-          title: "chore: regen from OpenAPI + tests"
+          title: "fix(openapi): regenerate Swift types & client from spec"
           body: |
-            Regeneración automática desde OpenAPI.
-            - Forzado JSON-RPC por POST "/"
+            Automated regeneration from NEAR OpenAPI.
+            - Force JSON-RPC POST "/"
             - snake_case → camelCase
-            - Build & tests verdes en CI
+            - Build & tests passed in CI
           labels: automated, openapi
           delete-branch: true

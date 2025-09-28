@@ -1,0 +1,48 @@
+name: Publish Docs (GitHub Pages)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-publish
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+      - name: Generate DocC site (NearJsonRpcClient)
+        run: |
+          swift package --disable-sandbox generate-documentation \
+            --target NearJsonRpcClient \
+            --output-path docs \
+            --transform-for-static-hosting \
+            --hosting-base-path near-swift-client
+          test -f docs/index.html
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

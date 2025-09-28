@@ -1,7 +1,7 @@
 import Foundation
 import NearJsonRpcTypes
 
-// MARK: - Envoltorios JSON-RPC
+// MARK: - Envoltorios JSON-RPC (lado cliente; distintos a los de Types)
 public struct JsonRpcRequest<Params: Encodable>: Encodable {
     public let jsonrpc = "2.0"
     public var id: String
@@ -49,39 +49,88 @@ public final class NearJsonRpcClient {
         self.session = session
     }
 
-    // Lanza POST al root "/" SIEMPRE (path consolidado)
+    // MARK: - Core call
     public func call<Params: Encodable, Result: Decodable>(
         method: String,
         params: Params? = nil,
         requestId: String = UUID().uuidString
     ) async throws -> Result {
-        var url = cfg.endpoint
-        // Aseguramos path "/"
-        if url.path.isEmpty { url.appendPathComponent("") }
-        var req = URLRequest(url: url)
+        // Fuerza path raíz "/"
+        var comps = URLComponents(url: cfg.endpoint, resolvingAgainstBaseURL: false)!
+        comps.path = "/" // <- REQUERIMIENTO tests: siempre "/"
+        var req = URLRequest(url: comps.url!)
         req.httpMethod = "POST"
         req.timeoutInterval = cfg.timeout
-        for (k,v) in cfg.headers { req.addValue(v, forHTTPHeaderField: k) }
-        let enc = JSONEncoder()
-        let body = JsonRpcRequest(id: requestId, method: method, params: params)
-        req.httpBody = try enc.encode(body)
 
+        // Headers por defecto y merge de custom
+        if req.value(forHTTPHeaderField: "Content-Type") == nil {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        if req.value(forHTTPHeaderField: "Accept") == nil {
+            req.setValue("application/json", forHTTPHeaderField: "Accept")
+        }
+        for (k, v) in cfg.headers { req.setValue(v, forHTTPHeaderField: k) }
+
+        // Encode envelope
+        let enc = JSONEncoder()
+        let envelope = JsonRpcRequest(id: requestId, method: method, params: params)
+        req.httpBody = try enc.encode(envelope)
+
+        // Red
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
         guard (200..<300).contains(http.statusCode) else {
             throw URLError(.init(rawValue: http.statusCode))
         }
+
+        // Decode tolerante snake/camel
         let dec = JSONDecoder()
+        dec.keyDecodingStrategy = .convertFromSnakeCase
         let env = try dec.decode(JsonRpcEnvelope<Result>.self, from: data)
+
         if let e = env.error { throw e }
-        guard let result = env.result else {
-            throw URLError(.cannotParseResponse)
-        }
+        guard let result = env.result else { throw URLError(.cannotParseResponse) }
         return result
+    }
+
+    // MARK: - Raw JSON-RPC (para power users / tests)
+    public func rawCall<R: Decodable, P: Encodable>(
+        method: String,
+        params: P,
+        decode type: R.Type = R.self
+    ) async throws -> R {
+        // 1) Envelope
+        let encoder = JSONEncoder()
+        let envelope = JsonRpcRequest(id: UUID().uuidString, method: method, params: params)
+        let body = try encoder.encode(envelope)
+
+        // 2) Request con slash raíz y headers
+        var comps = URLComponents(url: cfg.endpoint, resolvingAgainstBaseURL: false)!
+        comps.path = "/"
+        var req = URLRequest(url: comps.url!)
+        req.httpMethod = "POST"
+        req.httpBody = body
+        req.timeoutInterval = cfg.timeout
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        for (k, v) in cfg.headers { req.setValue(v, forHTTPHeaderField: k) }
+
+        // 3) Red
+        let (data, resp) = try await session.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        // 4) Decode envelope
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let env = try decoder.decode(JsonRpcEnvelope<R>.self, from: data)
+        if let r = env.result { return r }
+        if let e = env.error { throw e }
+        throw URLError(.cannotDecodeRawData)
     }
 }
 
-// MARK: - Parámetros & Tipos de ayuda
+// MARK: - Parámetros & Tipos helpers (idénticos a los de Types)
 public enum Finality: String, Codable { case optimistic = "optimistic", final = "final" }
 
 public enum BlockId: Codable, Equatable {
@@ -112,27 +161,24 @@ public struct ChunkParams: Encodable {
     public var chunk_id: String?
     public var block_id: BlockId?
     public var shard_id: Int?
-    // chunk_id o (block_id+shard_id)
     public init(chunkId: String) { self.chunk_id = chunkId }
     public init(blockId: BlockId, shardId: Int) { self.block_id = blockId; self.shard_id = shardId }
 }
 
 public enum ValidatorsParams: Encodable {
-    // current -> [null]
     case current
     case byEpochId(String)
     public func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch self {
         case .current:
-            try c.encode([JSONValue.null])
+            try c.encode([JSONValue.null]) // tests esperan [null]
         case .byEpochId(let id):
             try c.encode(["epoch_id": id])
         }
     }
 }
 
-// send_tx / tx
 public enum WaitUntil: String, Codable {
     case none = "NONE"
     case includedOptimistic = "INCLUDED_OPTIMISTIC"
@@ -162,7 +208,7 @@ public struct TxStatusParams: Encodable {
     }
 }
 
-// query: view_* y cambios
+// Query params
 public struct ViewAccountParams: Encodable {
     public let request_type = "view_account"
     public var finality: Finality?
@@ -246,62 +292,50 @@ public struct LightClientProofParams: Encodable {
 
 // MARK: - Métodos tipados
 public extension NearJsonRpcClient {
-
     // Bloques / Chunks / Validadores
-    func block(_ p: BlockParams) async throws -> BlockView { try await call(method: "block", params: p) } // docs: block. :contentReference[oaicite:5]{index=5}
-    func chunk(_ p: ChunkParams) async throws -> ChunkView { try await call(method: "chunk", params: p) } // docs: chunk. :contentReference[oaicite:6]{index=6}
-    func validators(_ p: ValidatorsParams = .current) async throws -> EpochValidatorInfo { try await call(method: "validators", params: p) } // docs: validators. :contentReference[oaicite:7]{index=7}
+    func block(_ p: BlockParams) async throws -> BlockView { try await call(method: "block", params: p) }
+    func chunk(_ p: ChunkParams) async throws -> ChunkView { try await call(method: "chunk", params: p) }
+    func validators(_ p: ValidatorsParams = .current) async throws -> EpochValidatorInfo { try await call(method: "validators", params: p) }
 
     // Query / Accounts / Contracts
-    func viewAccount(_ p: ViewAccountParams) async throws -> ViewAccountResult {
-        try await call(method: "query", params: p) // docs: query.view_account. :contentReference[oaicite:8]{index=8}
-    }
-    func viewAccessKey(_ p: ViewAccessKeyParams) async throws -> ViewAccessKeyResult {
-        try await call(method: "query", params: p) // docs: view_access_key. :contentReference[oaicite:9]{index=9}
-    }
-    func viewAccessKeyList(_ p: ViewAccessKeyListParams) async throws -> ViewAccessKeyListResult {
-        try await call(method: "query", params: p) // docs: view_access_key_list. :contentReference[oaicite:10]{index=10}
-    }
-    func viewCode(_ p: ViewCodeParams) async throws -> ViewCodeResult {
-        try await call(method: "query", params: p) // docs: view_code. :contentReference[oaicite:11]{index=11}
-    }
-    func viewState(_ p: ViewStateParams) async throws -> ViewStateResult {
-        try await call(method: "query", params: p) // docs: view_state. :contentReference[oaicite:12]{index=12}
-    }
-    func accountChanges(_ p: ChangesAccountParams) async throws -> StateChangesResult {
-        try await call(method: "changes", params: p) // docs: changes.account_changes. :contentReference[oaicite:13]{index=13}
-    }
+    func viewAccount(_ p: ViewAccountParams) async throws -> ViewAccountResult { try await call(method: "query", params: p) }
+    func viewAccessKey(_ p: ViewAccessKeyParams) async throws -> ViewAccessKeyResult { try await call(method: "query", params: p) }
+    func viewAccessKeyList(_ p: ViewAccessKeyListParams) async throws -> ViewAccessKeyListResult { try await call(method: "query", params: p) }
+    func viewCode(_ p: ViewCodeParams) async throws -> ViewCodeResult { try await call(method: "query", params: p) }
+    func viewState(_ p: ViewStateParams) async throws -> ViewStateResult { try await call(method: "query", params: p) }
+    func accountChanges(_ p: ChangesAccountParams) async throws -> StateChangesResult { try await call(method: "changes", params: p) }
 
     // Protocolo / Génesis
-    func getGenesisConfig() async throws -> GenesisConfig { try await call(method: "EXPERIMENTAL_genesis_config", params: Optional<Int>.none) } // docs. :contentReference[oaicite:14]{index=14}
-    func getProtocolConfig(_ p: ProtocolConfigParams) async throws -> ProtocolConfig { try await call(method: "EXPERIMENTAL_protocol_config", params: p) } // docs. :contentReference[oaicite:15]{index=15}
+    func getGenesisConfig() async throws -> GenesisConfig { try await call(method: "EXPERIMENTAL_genesis_config", params: Optional<Int>.none) }
+    func getProtocolConfig(_ p: ProtocolConfigParams) async throws -> ProtocolConfig { try await call(method: "EXPERIMENTAL_protocol_config", params: p) }
 
     // Transacciones
-    func sendTransaction(_ p: SendTxParams) async throws -> FinalExecutionOutcome { try await call(method: "send_tx", params: p) } // docs. :contentReference[oaicite:16]{index=16}
-    // Compatibilidad legacy (deprecados)
-    func broadcastTxAsync(base64: String) async throws -> String {
-        try await call(method: "broadcast_tx_async", params: [base64]) // devuelve hash; deprecado. :contentReference[oaicite:17]{index=17}
-    }
-    func broadcastTxCommit(base64: String) async throws -> FinalExecutionOutcome {
-        try await call(method: "broadcast_tx_commit", params: [base64]) // deprecado. :contentReference[oaicite:18]{index=18}
-    }
-    func txStatus(_ p: TxStatusParams) async throws -> FinalExecutionOutcome {
-        try await call(method: "tx", params: p) // docs: tx. :contentReference[oaicite:19]{index=19}
-    }
+    func sendTransaction(_ p: SendTxParams) async throws -> FinalExecutionOutcome { try await call(method: "send_tx", params: p) }
+    func broadcastTxAsync(base64: String) async throws -> String { try await call(method: "broadcast_tx_async", params: [base64]) }
+    func broadcastTxCommit(base64: String) async throws -> FinalExecutionOutcome { try await call(method: "broadcast_tx_commit", params: [base64]) }
+    func txStatus(_ p: TxStatusParams) async throws -> FinalExecutionOutcome { try await call(method: "tx", params: p) }
 
     // Light Client
     func lightClientProof(_ p: LightClientProofParams) async throws -> LightClientExecutionProof {
-        try await call(method: "EXPERIMENTAL_light_client_proof", params: p) // spec nomicon. :contentReference[oaicite:20]{index=20}
+        try await call(method: "EXPERIMENTAL_light_client_proof", params: p)
     }
+
     func nextLightClientBlock(lastKnownHash: String?) async throws -> LightClientBlockView? {
-        // params: [<last known hash>] o []
         if let h = lastKnownHash {
             let res: JSONValue = try await call(method: "next_light_client_block", params: [h])
-            if case let .object(o) = res { return try JSONDecoder().decode(LightClientBlockView.self, from: JSONSerialization.data(withJSONObject: o)) }
+            if case let .object(o) = res {
+                let data = try JSONEncoder().encode(JSONValue.object(o))
+                let dec = JSONDecoder(); dec.keyDecodingStrategy = .convertFromSnakeCase
+                return try dec.decode(LightClientBlockView.self, from: data)
+            }
             return nil
         } else {
             let res: JSONValue = try await call(method: "next_light_client_block", params: [JSONValue]())
-            if case let .object(o) = res { return try JSONDecoder().decode(LightClientBlockView.self, from: JSONSerialization.data(withJSONObject: o)) }
+            if case let .object(o) = res {
+                let data = try JSONEncoder().encode(JSONValue.object(o))
+                let dec = JSONDecoder(); dec.keyDecodingStrategy = .convertFromSnakeCase
+                return try dec.decode(LightClientBlockView.self, from: data)
+            }
             return nil
         }
     }

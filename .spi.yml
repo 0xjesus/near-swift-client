@@ -1,0 +1,14 @@
+version: 1
+builder:
+  configs:
+    - platform: ios
+      scheme: NearJsonRpcClient
+    - platform: macos
+      scheme: NearJsonRpcClient
+    - platform: ios
+      scheme: NearJsonRpcTypes
+    - platform: macos
+      scheme: NearJsonRpcTypes
+documentation_targets:
+  - NearJsonRpcClient
+  - NearJsonRpcTypes

@@ -1,0 +1,18 @@
+name: Coverage (gate 80%)
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  coverage:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+      - name: Coverage gate
+        run: |
+          chmod +x Scripts/coverage-summary.sh
+          ./Scripts/coverage-summary.sh

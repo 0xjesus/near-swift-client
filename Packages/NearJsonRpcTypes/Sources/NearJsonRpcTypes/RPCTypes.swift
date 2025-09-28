@@ -1,12 +1,41 @@
 import Foundation
 
-// MARK: - JSON-RPC Base Types
+// MARK: - Dynamic coding keys helpers
+internal struct _AnyKey: CodingKey {
+    var stringValue: String
+    var intValue: Int? { nil }
+    init?(intValue: Int) { return nil }
+    init?(stringValue: String) { self.stringValue = stringValue }
+}
+
+internal extension KeyedDecodingContainer where Key == _AnyKey {
+    func decode<T: Decodable>(_ type: T.Type, anyOf keys: [String]) throws -> T {
+        for k in keys {
+            if let key = _AnyKey(stringValue: k), let v = try decodeIfPresent(T.self, forKey: key) {
+                return v
+            }
+        }
+        throw DecodingError.keyNotFound(
+            _AnyKey(stringValue: keys.first!)!,
+            .init(codingPath: codingPath, debugDescription: "Neither \(keys.map{$0}.joined(separator: "/")) present")
+        )
+    }
+}
+
+internal extension KeyedEncodingContainer where Key == _AnyKey {
+    mutating func encode<T: Encodable>(_ value: T, forAnyOf keys: [String]) throws {
+        guard let key = _AnyKey(stringValue: keys[0]) else { return }
+        try encode(value, forKey: key)
+    }
+}
+
+// MARK: - JSON-RPC request/response for Types target
 public struct JSONRPCRequest<T: Encodable>: Encodable {
     public let jsonrpc: String = "2.0"
     public let id: String
     public let method: String
     public let params: T
-    
+
     public init(id: String = UUID().uuidString, method: String, params: T) {
         self.id = id
         self.method = method
@@ -27,71 +56,50 @@ public struct JSONRPCError: Codable, Error {
     public let data: AnyCodable?
 }
 
-// MARK: - Helper for Any Codable
+// Generic AnyCodable used in error.data
 public struct AnyCodable: Codable {
     public let value: Any
-    
+
     public init(_ value: Any) {
         self.value = value
     }
-    
+
     public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let intValue = try? container.decode(Int.self) {
-            value = intValue
-        } else if let stringValue = try? container.decode(String.self) {
-            value = stringValue
-        } else if let boolValue = try? container.decode(Bool.self) {
-            value = boolValue
-        } else if let doubleValue = try? container.decode(Double.self) {
-            value = doubleValue
-        } else if let dictValue = try? container.decode([String: AnyCodable].self) {
-            value = dictValue
-        } else if let arrayValue = try? container.decode([AnyCodable].self) {
-            value = arrayValue
-        } else {
-            value = NSNull()
-        }
+        let c = try decoder.singleValueContainer()
+        if let i = try? c.decode(Int.self) { value = i; return }
+        if let s = try? c.decode(String.self) { value = s; return }
+        if let b = try? c.decode(Bool.self) { value = b; return }
+        if let d = try? c.decode(Double.self) { value = d; return }
+        if let o = try? c.decode([String: AnyCodable].self) { value = o; return }
+        if let a = try? c.decode([AnyCodable].self) { value = a; return }
+        value = NSNull()
     }
-    
+
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
+        var c = encoder.singleValueContainer()
         switch value {
-        case let intValue as Int:
-            try container.encode(intValue)
-        case let stringValue as String:
-            try container.encode(stringValue)
-        case let boolValue as Bool:
-            try container.encode(boolValue)
-        case let doubleValue as Double:
-            try container.encode(doubleValue)
-        default:
-            try container.encodeNil()
+        case let i as Int: try c.encode(i)
+        case let s as String: try c.encode(s)
+        case let b as Bool: try c.encode(b)
+        case let d as Double: try c.encode(d)
+        default: try c.encodeNil()
         }
     }
 }
 
-// MARK: - View Account
-public struct ViewAccountRequest: Encodable {
-    public let requestType: String = "view_account"
-    public let finality: String?
-    public let blockId: BlockHeight?
-    public let accountId: AccountId
-    
-    public init(accountId: AccountId, finality: String? = "optimistic", blockId: BlockHeight? = nil) {
-        self.accountId = accountId
-        self.finality = finality
-        self.blockId = blockId
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case requestType = "request_type"
-        case finality
-        case blockId = "block_id"
-        case accountId = "account_id"
-    }
-}
+// MARK: - Near primitive aliases (deberían estar ya en BasicTypes.swift)
+// Aquí asumimos que ya existen en tu proyecto:
+// public typealias Balance = String
+// public typealias Hash = String
+// public typealias BlockHeight = UInt64
+// public typealias Gas = UInt64
+// public typealias AccountId = String
+// public typealias Base64String = String
+// public typealias PublicKey = String
+// public typealias CryptoHash = String
+// public typealias U128 = String
 
+// MARK: - Account
 public struct Account: Codable {
     public let amount: Balance
     public let lockedAmount: Balance
@@ -100,98 +108,63 @@ public struct Account: Codable {
     public let storagePaidAt: BlockHeight
     public let blockHeight: BlockHeight
     public let blockHash: Hash
-    
-    private enum CodingKeys: String, CodingKey {
-        case amount
-        case lockedAmount = "locked_amount"
-        case codeHash = "code_hash"
-        case storageUsage = "storage_usage"
-        case storagePaidAt = "storage_paid_at"
-        case blockHeight = "block_height"
-        case blockHash = "block_hash"
+
+    public init(
+        amount: Balance,
+        lockedAmount: Balance,
+        codeHash: Hash,
+        storageUsage: UInt64,
+        storagePaidAt: BlockHeight,
+        blockHeight: BlockHeight,
+        blockHash: Hash
+    ) {
+        self.amount = amount
+        self.lockedAmount = lockedAmount
+        self.codeHash = codeHash
+        self.storageUsage = storageUsage
+        self.storagePaidAt = storagePaidAt
+        self.blockHeight = blockHeight
+        self.blockHash = blockHash
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: _AnyKey.self)
+        self.amount        = try c.decode(Balance.self,    anyOf: ["amount"])
+        // locked puede venir como "locked_amount" (snake), "locked" (legacy) o "lockedAmount" (camel)
+        self.lockedAmount  = (try? c.decode(Balance.self,  anyOf: ["locked_amount", "locked", "lockedAmount"])) ?? "0"
+        self.codeHash      = try c.decode(Hash.self,       anyOf: ["code_hash", "codeHash"])
+        self.storageUsage  = try c.decode(UInt64.self,     anyOf: ["storage_usage", "storageUsage"])
+        self.storagePaidAt = try c.decode(BlockHeight.self,anyOf: ["storage_paid_at", "storagePaidAt"])
+        self.blockHeight   = try c.decode(BlockHeight.self,anyOf: ["block_height", "blockHeight"])
+        self.blockHash     = try c.decode(Hash.self,       anyOf: ["block_hash", "blockHash"])
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: _AnyKey.self)
+        try c.encode(amount,        forAnyOf: ["amount"])
+        try c.encode(lockedAmount,  forAnyOf: ["locked_amount"])
+        try c.encode(codeHash,      forAnyOf: ["code_hash"])
+        try c.encode(storageUsage,  forAnyOf: ["storage_usage"])
+        try c.encode(storagePaidAt, forAnyOf: ["storage_paid_at"])
+        try c.encode(blockHeight,   forAnyOf: ["block_height"])
+        try c.encode(blockHash,     forAnyOf: ["block_hash"])
     }
 }
 
-// MARK: - Function Call
-public struct FunctionCallRequest: Encodable {
-    public let requestType: String = "call_function"
-    public let finality: String?
-    public let blockId: BlockHeight?
-    public let accountId: AccountId
-    public let methodName: String
-    public let argsBase64: Base64String
-    
-    public init(accountId: AccountId, methodName: String, argsBase64: Base64String, finality: String? = "optimistic", blockId: BlockHeight? = nil) {
-        self.accountId = accountId
-        self.methodName = methodName
-        self.argsBase64 = argsBase64
-        self.finality = finality
-        self.blockId = blockId
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case requestType = "request_type"
-        case finality
-        case blockId = "block_id"
-        case accountId = "account_id"
-        case methodName = "method_name"
-        case argsBase64 = "args_base64"
-    }
-}
-
-public struct FunctionCallResult: Codable {
-    public let result: [UInt8]
-    public let logs: [String]
-    public let blockHeight: BlockHeight
-    public let blockHash: Hash
-    
-    private enum CodingKeys: String, CodingKey {
-        case result
-        case logs
-        case blockHeight = "block_height"
-        case blockHash = "block_hash"
-    }
-}
-
-// MARK: - Transaction Status
-public struct TxStatusRequest: Encodable {
-    public let txHash: Hash
-    public let senderId: AccountId
-    
-    public init(txHash: Hash, senderId: AccountId) {
-        self.txHash = txHash
-        self.senderId = senderId
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case txHash = "tx_hash"
-        case senderId = "sender_id"
-    }
-}
-
-// MARK: - Block
-public struct BlockRequest: Encodable {
-    public let finality: String?
-    public let blockId: BlockHeight?
-    
-    public init(finality: String? = "final", blockId: BlockHeight? = nil) {
-        self.finality = finality
-        self.blockId = blockId
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case finality
-        case blockId = "block_id"
-    }
-}
-
-public struct Block: Codable {
+// MARK: - Block / Headers / Chunks
+public struct Block: Codable, Equatable {
     public let author: AccountId
     public let header: BlockHeader
     public let chunks: [ChunkHeader]
+
+    public init(author: AccountId, header: BlockHeader, chunks: [ChunkHeader]) {
+        self.author = author
+        self.header = header
+        self.chunks = chunks
+    }
 }
 
-public struct BlockHeader: Codable {
+public struct BlockHeader: Codable, Equatable {
     public let height: BlockHeight
     public let epochId: String
     public let prevHash: Hash
@@ -202,22 +175,61 @@ public struct BlockHeader: Codable {
     public let gasPrice: Balance
     public let totalSupply: Balance
     public let challengesRoot: String
-    
-    private enum CodingKeys: String, CodingKey {
-        case height
-        case epochId = "epoch_id"
-        case prevHash = "prev_hash"
-        case prevStateRoot = "prev_state_root"
-        case timestamp
-        case timestampNanosec = "timestamp_nanosec"
-        case randomValue = "random_value"
-        case gasPrice = "gas_price"
-        case totalSupply = "total_supply"
-        case challengesRoot = "challenges_root"
+
+    public init(
+        height: BlockHeight,
+        epochId: String,
+        prevHash: Hash,
+        prevStateRoot: Hash,
+        timestamp: UInt64,
+        timestampNanosec: String,
+        randomValue: String,
+        gasPrice: Balance,
+        totalSupply: Balance,
+        challengesRoot: String
+    ) {
+        self.height = height
+        self.epochId = epochId
+        self.prevHash = prevHash
+        self.prevStateRoot = prevStateRoot
+        self.timestamp = timestamp
+        self.timestampNanosec = timestampNanosec
+        self.randomValue = randomValue
+        self.gasPrice = gasPrice
+        self.totalSupply = totalSupply
+        self.challengesRoot = challengesRoot
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: _AnyKey.self)
+        self.height           = try c.decode(BlockHeight.self, anyOf: ["height"])
+        self.epochId          = try c.decode(String.self,      anyOf: ["epoch_id", "epochId"])
+        self.prevHash         = try c.decode(Hash.self,        anyOf: ["prev_hash", "prevHash"])
+        self.prevStateRoot    = try c.decode(Hash.self,        anyOf: ["prev_state_root", "prevStateRoot"])
+        self.timestamp        = try c.decode(UInt64.self,      anyOf: ["timestamp"])
+        self.timestampNanosec = try c.decode(String.self,      anyOf: ["timestamp_nanosec", "timestampNanosec"])
+        self.randomValue      = try c.decode(String.self,      anyOf: ["random_value", "randomValue"])
+        self.gasPrice         = try c.decode(Balance.self,     anyOf: ["gas_price", "gasPrice"])
+        self.totalSupply      = try c.decode(Balance.self,     anyOf: ["total_supply", "totalSupply"])
+        self.challengesRoot   = try c.decode(String.self,      anyOf: ["challenges_root", "challengesRoot"])
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: _AnyKey.self)
+        try c.encode(height,           forAnyOf: ["height"])
+        try c.encode(epochId,          forAnyOf: ["epoch_id"])
+        try c.encode(prevHash,         forAnyOf: ["prev_hash"])
+        try c.encode(prevStateRoot,    forAnyOf: ["prev_state_root"])
+        try c.encode(timestamp,        forAnyOf: ["timestamp"])
+        try c.encode(timestampNanosec, forAnyOf: ["timestamp_nanosec"])
+        try c.encode(randomValue,      forAnyOf: ["random_value"])
+        try c.encode(gasPrice,         forAnyOf: ["gas_price"])
+        try c.encode(totalSupply,      forAnyOf: ["total_supply"])
+        try c.encode(challengesRoot,   forAnyOf: ["challenges_root"])
     }
 }
 
-public struct ChunkHeader: Codable {
+public struct ChunkHeader: Codable, Equatable {
     public let chunkHash: Hash
     public let prevBlockHash: Hash
     public let heightCreated: BlockHeight
@@ -225,7 +237,25 @@ public struct ChunkHeader: Codable {
     public let shardId: UInt64
     public let gasUsed: Gas
     public let gasLimit: Gas
-    
+
+    public init(
+        chunkHash: Hash,
+        prevBlockHash: Hash,
+        heightCreated: BlockHeight,
+        heightIncluded: BlockHeight,
+        shardId: UInt64,
+        gasUsed: Gas,
+        gasLimit: Gas
+    ) {
+        self.chunkHash = chunkHash
+        self.prevBlockHash = prevBlockHash
+        self.heightCreated = heightCreated
+        self.heightIncluded = heightIncluded
+        self.shardId = shardId
+        self.gasUsed = gasUsed
+        self.gasLimit = gasLimit
+    }
+
     private enum CodingKeys: String, CodingKey {
         case chunkHash = "chunk_hash"
         case prevBlockHash = "prev_block_hash"

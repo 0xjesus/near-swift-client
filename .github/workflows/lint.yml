@@ -1,0 +1,15 @@
+name: Lint
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  swiftformat:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+      - name: Check formatting
+        run: swiftformat . --lint --swiftversion 5.9
