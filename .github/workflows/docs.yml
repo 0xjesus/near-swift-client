@@ -37,22 +37,26 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf docs
-          # Allow SPM to write outside its default area, and generate a static DocC site
+          # Generate static DocC site (no --disable-sandbox; allow writing to docs/)
           swift package --allow-writing-to-directory docs \
-            --disable-sandbox generate-documentation \
+            generate-documentation \
             --target NearJsonRpcClient \
             --output-path docs \
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
-          # Prevent Jekyll from stripping DocC assets
-          touch docs/.nojekyll
-          # Sanity checks (keep non-fatal so the job doesn't fail on layout differences)
-          if [[ ! -f docs/index.html ]]; then
-            echo "❌ docs/index.html not found"; ls -la docs; exit 1
+
+          # Some plugin versions nest output under target name. Flatten if needed.
+          if [[ ! -f docs/index.html && -d docs/NearJsonRpcClient ]]; then
+            echo "Flattening NearJsonRpcClient/ into docs/"
+            rsync -a "docs/NearJsonRpcClient/" "docs/"
+            rm -rf "docs/NearJsonRpcClient"
           fi
-          if [[ ! -d docs/assets ]]; then echo "⚠️ docs/assets missing (continuing)"; fi
-          if [[ ! -f docs/data/documentation.json ]]; then echo "⚠️ docs/data/documentation.json missing (continuing)"; fi
-          echo "DocC site generated at $(pwd)/docs"
+
+          # Ensure Pages serves all DocC assets
+          touch docs/.nojekyll
+
+          # Final sanity check
+          test -f docs/index.html || (echo "docs/index.html not found"; ls -la docs; exit 1)
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
