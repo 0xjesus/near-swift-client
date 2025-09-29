@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           rm -rf docs
 
-          # Generate DocC site
+          # Generar sitio DocC
           swift package --allow-writing-to-directory docs \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -47,52 +47,43 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
 
-          echo "== Tree after generate =="
-          (cd docs && find . -maxdepth 3 -print | sort)
-
-          # Flatten if DocC nested under module dir
+          # Aplanar si DocC anida en /NearJsonRpcClient
           if [[ -d docs/NearJsonRpcClient && -d docs/NearJsonRpcClient/data ]]; then
-            echo "Flattening NearJsonRpcClient/ -> docs/"
             rsync -a "docs/NearJsonRpcClient/" "docs/"
             rm -rf "docs/NearJsonRpcClient"
           fi
 
-          # Ensure 'data' root exists
-          mkdir -p docs/data docs/data/documentation
+          mkdir -p docs/data docs/data/documentation docs/index
 
-          # Fallbacks (create only if missing)
-
-          # 1) documentation.json (index)
-          if [[ ! -f docs/data/documentation.json ]]; then
+          # Asegurar documentation.json en raíz de data
+          if [[ ! -s docs/data/documentation.json ]]; then
             MOD_JSON=$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)
             if [[ -n "${MOD_JSON:-}" ]]; then
               cp "${MOD_JSON}" docs/data/documentation.json
             fi
           fi
 
-          # 2) linkable-entities.json (MUST NOT BE EMPTY)
-          if [[ ! -f docs/data/linkable-entities.json ]]; then
+          # *** FIX CRÍTICO ***
+          # linkable-entities.json no puede ser {}.
+          # Si no existe o pesa < 10 bytes, escribir un stub válido.
+          if [[ ! -s docs/data/linkable-entities.json || $(wc -c < docs/data/linkable-entities.json) -lt 10 ]]; then
             cat > docs/data/linkable-entities.json <<'JSON'
 {"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}
 JSON
           fi
 
-          # 3) Minimal search index so the viewer doesn't fail silently
-          if [[ ! -f docs/index/index.json ]]; then
-            mkdir -p docs/index
+          # Índice de búsqueda mínimo (evita errores en el viewer)
+          if [[ ! -s docs/index/index.json ]]; then
             printf '{"records":[]}' > docs/index/index.json
           fi
 
-          # Avoid Jekyll stripping DocC assets
+          # Evitar Jekyll
           touch docs/.nojekyll
 
           # Sanity checks
           test -f docs/index.html
-          test -f docs/data/documentation.json
-          test -f docs/data/linkable-entities.json
-
-          echo "== Final tree to publish =="
-          (cd docs && find . -maxdepth 3 -print | sort)
+          test -s docs/data/documentation.json
+          test -s docs/data/linkable-entities.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
