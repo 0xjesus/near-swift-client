@@ -229,23 +229,24 @@ public struct BlockHeader: Codable, Equatable {
     }
 }
 
+// MARK: - ChunkHeader (tolerante + Equatable)
 public struct ChunkHeader: Codable, Equatable {
-    public let chunkHash: Hash
-    public let prevBlockHash: Hash
-    public let heightCreated: BlockHeight
-    public let heightIncluded: BlockHeight
-    public let shardId: UInt64
-    public let gasUsed: Gas
-    public let gasLimit: Gas
+    public let chunkHash: Hash?
+    public let prevBlockHash: Hash?
+    public let heightCreated: BlockHeight?
+    public let heightIncluded: BlockHeight?
+    public let shardId: UInt64?
+    public let gasUsed: Gas?
+    public let gasLimit: Gas?
 
     public init(
-        chunkHash: Hash,
-        prevBlockHash: Hash,
-        heightCreated: BlockHeight,
-        heightIncluded: BlockHeight,
-        shardId: UInt64,
-        gasUsed: Gas,
-        gasLimit: Gas
+        chunkHash: Hash? = nil,
+        prevBlockHash: Hash? = nil,
+        heightCreated: BlockHeight? = nil,
+        heightIncluded: BlockHeight? = nil,
+        shardId: UInt64? = nil,
+        gasUsed: Gas? = nil,
+        gasLimit: Gas? = nil
     ) {
         self.chunkHash = chunkHash
         self.prevBlockHash = prevBlockHash
@@ -256,13 +257,26 @@ public struct ChunkHeader: Codable, Equatable {
         self.gasLimit = gasLimit
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case chunkHash = "chunk_hash"
-        case prevBlockHash = "prev_block_hash"
-        case heightCreated = "height_created"
-        case heightIncluded = "height_included"
-        case shardId = "shard_id"
-        case gasUsed = "gas_used"
-        case gasLimit = "gas_limit"
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: _AnyKey.self)
+        self.chunkHash      = try c.decodeIfPresent(Hash.self,        forKey: _AnyKey(stringValue: "chunk_hash")!)
+        self.prevBlockHash  = try c.decodeIfPresent(Hash.self,        forKey: _AnyKey(stringValue: "prev_block_hash")!)
+        self.heightCreated  = try c.decodeIfPresent(BlockHeight.self, forKey: _AnyKey(stringValue: "height_created")!)
+        self.heightIncluded = try c.decodeIfPresent(BlockHeight.self, forKey: _AnyKey(stringValue: "height_included")!)
+        self.shardId        = try c.decodeIfPresent(UInt64.self,      forKey: _AnyKey(stringValue: "shard_id")!)
+        self.gasUsed        = try c.decodeIfPresent(Gas.self,         forKey: _AnyKey(stringValue: "gas_used")!)
+        self.gasLimit       = try c.decodeIfPresent(Gas.self,         forKey: _AnyKey(stringValue: "gas_limit")!)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: _AnyKey.self)
+        try c.encodeIfPresent(chunkHash,      forKey: _AnyKey(stringValue: "chunk_hash")!)
+        try c.encodeIfPresent(prevBlockHash,  forKey: _AnyKey(stringValue: "prev_block_hash")!)
+        try c.encodeIfPresent(heightCreated,  forKey: _AnyKey(stringValue: "height_created")!)
+        try c.encodeIfPresent(heightIncluded, forKey: _AnyKey(stringValue: "height_included")!)
+        try c.encodeIfPresent(shardId,        forKey: _AnyKey(stringValue: "shard_id")!)
+        try c.encodeIfPresent(gasUsed,        forKey: _AnyKey(stringValue: "gas_used")!)
+        try c.encodeIfPresent(gasLimit,       forKey: _AnyKey(stringValue: "gas_limit")!)
     }
 }
+

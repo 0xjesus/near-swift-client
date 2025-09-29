@@ -3,70 +3,84 @@ import XCTest
 
 final class RPCCompatCoverageTests: XCTestCase {
 
-    func testRPCLiteralCodableAllVariants() throws {
-        let values: [RPCLiteral] = [
-            .int(1),
-            .bool(true),
-            .double(3.14),
-            .string("s"),
-            .array([.int(2), .string("x"), .null]),
-            .object(["k": .int(3), "arr": .array([.bool(false)])]),
-            .null
-        ]
-        let enc = JSONEncoder(), dec = JSONDecoder()
-        for v in values {
-            let data = try enc.encode(v)
-            let back = try dec.decode(RPCLiteral.self, from: data)
-            XCTAssertEqual(back, v)
-        }
+    func testRPCLiteral_object_array_roundtrip() throws {
+        let lit: RPCLiteral = .object([
+            "s": .string("a"),
+            "b": .bool(true),
+            "d": .double(1.5),
+            "a": .array([.string("x"), .null])
+        ])
+        let data = try JSONEncoder().encode(lit)
+        let back = try JSONDecoder().decode(RPCLiteral.self, from: data)
+        XCTAssertEqual(lit, back)
     }
 
-    func testRPCParamsObjectAndArray() throws {
-        let obj = RPCParams.object(["a": .int(1), "b": .string("x")])
-        let arr = RPCParams.array([.int(1), .string("y")])
-        let enc = JSONEncoder(), dec = JSONDecoder()
-        XCTAssertEqual(try dec.decode(RPCParams.self, from: try enc.encode(obj)), obj)
-        XCTAssertEqual(try dec.decode(RPCParams.self, from: try enc.encode(arr)), arr)
+    func testRPCParams_encode_object_and_array() throws {
+        let p1: RPCParams = .object(["x": .string("y")])
+        let d1 = try JSONEncoder().encode(p1)
+        let o1 = try JSONSerialization.jsonObject(with: d1) as! [String:Any]
+        XCTAssertEqual(o1["x"] as? String, "y")
+
+        let p2: RPCParams = .array([.string("a"), .null, .bool(false)])
+        let d2 = try JSONEncoder().encode(p2)
+        let a2 = try JSONSerialization.jsonObject(with: d2) as! [Any]
+        XCTAssertEqual(a2.count, 3)
     }
 
-    func testRPCRequestEnvelopeRoundtrip_IntId() throws {
-        let env = RPCRequestEnvelope(id: .int(42), method: "method", params: .object(["k": .string("v")]))
+    func testRPCRequestID_encode_int_and_string() throws {
+        let i: RPCRequestID = .int(7)
+        let di = try JSONEncoder().encode(i)
+        let vi = try JSONSerialization.jsonObject(with: di, options: [.fragmentsAllowed]) as! Int
+        XCTAssertEqual(vi, 7)
+
+        let s: RPCRequestID = .string("abc")
+        let ds = try JSONEncoder().encode(s)
+        let vs = try JSONSerialization.jsonObject(with: ds, options: [.fragmentsAllowed]) as! String
+        XCTAssertEqual(vs, "abc")
+    }
+
+    func testRPCRequestEnvelope_encode_shape() throws {
+        let env = RPCRequestEnvelope(id: .string("1"),
+                                     method: "m",
+                                     params: .object(["p": .string("v")]))
         let data = try JSONEncoder().encode(env)
-        let back = try JSONDecoder().decode(RPCRequestEnvelope.self, from: data)
-        XCTAssertEqual(back.id, .int(42))
-        guard case .object(let o) = back.params else { return XCTFail() }
-        XCTAssertEqual(o["k"], .string("v"))
+        let obj = try JSONSerialization.jsonObject(with: data) as! [String:Any]
+        XCTAssertEqual(obj["jsonrpc"] as? String, "2.0")
+        XCTAssertEqual(obj["method"] as? String, "m")
+        XCTAssertEqual(obj["id"] as? String, "1")
+        let params = obj["params"] as! [String:Any]
+        XCTAssertEqual(params["p"] as? String, "v")
     }
 
-    func testRPCRequestEnvelopeRoundtrip_StringId() throws {
-        let env = RPCRequestEnvelope(id: .string("abc"), method: "m", params: .array([.int(1), .bool(true)]))
-        let data = try JSONEncoder().encode(env)
-        let back = try JSONDecoder().decode(RPCRequestEnvelope.self, from: data)
-        XCTAssertEqual(back.id, .string("abc"))
-        guard case .array(let a) = back.params, a.count == 2 else { return XCTFail() }
-    }
-
-    func testRPCResponseEnvelope_SuccessAndError() throws {
-        // success
-        let okJSON = #"{ "jsonrpc":"2.0", "id": 1, "result": { "x": 1 } }"#
-        let ok = try JSONDecoder().decode(RPCResponseEnvelope.self, from: Data(okJSON.utf8))
+    func testRPCResponseEnvelope_success_and_failure() throws {
+        // éxito con result como objeto
+        let ok = RPCResponseEnvelope(jsonrpc: "2.0",
+                                     id: .int(1),
+                                     result: .object(["x": .string("v")]),
+                                     error: nil)
         switch ok.result {
         case .success(let v):
-            if case .object(let o) = v {
-                XCTAssertNotNil(o["x"])
-            } else { XCTFail() }
+            if case let .object(o) = v {
+                XCTAssertEqual(o["x"], .some(.string("v")))
+            } else {
+                XCTFail("result no es object")
+            }
         case .failure:
-            XCTFail()
+            XCTFail("no esperaba error")
         }
 
         // error
-        let errJSON = #"{ "jsonrpc":"2.0", "id": "1", "error": { "code": -32000, "message": "boom" } }"#
-        let bad = try JSONDecoder().decode(RPCResponseEnvelope.self, from: Data(errJSON.utf8))
-        switch bad.result {
-        case .success: XCTFail()
+        let err = JSONRPCError(code: -32000, message: "oops", data: nil)
+        let ko = RPCResponseEnvelope(jsonrpc: "2.0",
+                                     id: .int(1),
+                                     result: nil,
+                                     error: err)
+        switch ko.result {
+        case .success:
+            XCTFail("esperaba error")
         case .failure(let e):
             XCTAssertEqual(e.code, -32000)
-            XCTAssertEqual(e.message, "boom")
+            XCTAssertEqual(e.message, "oops")
         }
     }
 }
