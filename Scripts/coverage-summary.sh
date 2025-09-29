@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SwiftPM coverage gate (macOS/bash 3.2 compatible)
 # Usage: ./Scripts/coverage-summary.sh [THRESHOLD]
-# Default threshold: 80 (lines coverage)
+# Default threshold: 80 (line coverage)
 
 set -euo pipefail
 
@@ -16,87 +16,98 @@ else
   LLVM_PROFDATA="llvm-profdata"
 fi
 
-echo "▶️  Resolviendo rutas…"
+echo "▶️  Resolving paths…"
 BINPATH="$(swift build --show-bin-path)"
 CODECOV_DIR="${BINPATH}/codecov"
 mkdir -p "${CODECOV_DIR}"
 
-# Fuerza volcados .profraw aquí (un archivo por proceso)
+# Force .profraw dumps here (one file per process)
 export LLVM_PROFILE_FILE="${CODECOV_DIR}/near-swift-client-%p.profraw"
 
-echo "▶️  Ejecutando tests con cobertura…"
+echo "▶️  Running tests with coverage…"
 swift test --enable-code-coverage > /dev/null
 
-echo "▶️  Localizando perfiles en ${CODECOV_DIR}…"
+echo "▶️  Looking for profiles in ${CODECOV_DIR}…"
 if ! ls -1 "${CODECOV_DIR}"/*.profraw >/dev/null 2>&1; then
-  # fallback: copia .profraw desde .build por si Swift los dejó fuera
+  # Fallback: copy .profraw from BINPATH if Swift left them elsewhere nearby
   find "${BINPATH}" -type f -name '*.profraw' -exec cp {} "${CODECOV_DIR}/" \; || true
 fi
 
+# Extra safety: also pull from .build if still nothing (some Swift toolchains write here)
 if ! ls -1 "${CODECOV_DIR}"/*.profraw >/dev/null 2>&1; then
-  echo "❌ No se encontraron .profraw (¿se ejecutaron tests?)."
+  find .build -type f -name '*.profraw' -exec cp {} "${CODECOV_DIR}/" \; || true
+fi
+
+if ! ls -1 "${CODECOV_DIR}"/*.profraw >/dev/null 2>&1; then
+  echo "❌ No .profraw files found (did tests run?)."
   echo "   BINPATH=${BINPATH}"
   exit 1
 fi
 
 PROFDATA="${CODECOV_DIR}/merged.profdata"
-echo "ℹ️  Fusionando perfiles → ${PROFDATA}"
+echo "ℹ️  Merging profiles → ${PROFDATA}"
 ${LLVM_PROFDATA} merge -sparse "${CODECOV_DIR}"/*.profraw -o "${PROFDATA}"
 
-# Ubicar binario de tests
+# Locate test bundle binary
 TEST_BIN="$(find "${BINPATH}" -type f -path '*/near-swift-clientPackageTests.xctest/Contents/MacOS/*' -print -quit || true)"
 if [ -z "${TEST_BIN}" ]; then
   TEST_BIN="$(find "${BINPATH}" -type f -name 'near-swift-clientPackageTests' -print -quit || true)"
 fi
 if [ -z "${TEST_BIN}" ]; then
-  echo "❌ No se encontró el binario de tests (near-swift-clientPackageTests)."
+  echo "❌ Could not find the test binary (near-swift-clientPackageTests)."
   exit 1
 fi
 
-# Ignorar rutas que no cuentan para el gate
+# Ignore paths that shouldn't count towards the gate
 IGNORE_REGEX="${COVERAGE_IGNORE_REGEX:-'(.build|/Tests/|/Generated/|/Scripts/)'}"
 
-echo "▶️  Reportando cobertura por archivo…"
+echo "▶️  Per-file coverage report…"
 ${LLVM_COV} report "${TEST_BIN}" -instr-profile "${PROFDATA}" -ignore-filename-regex "${IGNORE_REGEX}" || true
 
-echo "▶️  Calculando cobertura total (líneas) con llvm-cov export…"
+echo "▶️  Computing total line coverage with llvm-cov export…"
 SUMMARY_JSON="${CODECOV_DIR}/summary.json"
 if ! ${LLVM_COV} export "${TEST_BIN}" \
     -instr-profile "${PROFDATA}" \
     -ignore-filename-regex "${IGNORE_REGEX}" \
     -summary-only > "${SUMMARY_JSON}"; then
-  echo "❌ llvm-cov export falló."
+  echo "❌ llvm-cov export failed."
   exit 1
 fi
 
-# Extrae 'totals.lines.percent' con python3 (siempre presente en macOS reciente)
+# Extract totals.lines.percent using python3 (system python on macOS runners)
 PCT="$(/usr/bin/python3 - "${SUMMARY_JSON}" <<'PY'
 import json,sys
 with open(sys.argv[1]) as f:
   data=json.load(f)
-# llvm-cov export puede devolver 'data[0].totals' o 'totals' en versiones distintas
+
+# llvm-cov export may return {"totals":{...}} or {"data":[{"totals":{...}}]}
 totals = None
 if isinstance(data, dict) and 'totals' in data:
   totals = data['totals']
 elif isinstance(data, dict) and 'data' in data and data['data']:
   totals = data['data'][0].get('totals')
+
 if not totals or 'lines' not in totals or 'percent' not in totals['lines']:
   print("")
   sys.exit(0)
+
 pct = totals['lines']['percent']
-print(int(round(float(pct))))
+try:
+  print(int(round(float(pct))))
+except Exception:
+  print("")
 PY
 )"
 
 if [ -z "${PCT}" ]; then
-  echo "❌ No se pudo obtener el porcentaje de líneas desde ${SUMMARY_JSON}"
+  echo "❌ Could not read line coverage percent from ${SUMMARY_JSON}"
   exit 1
 fi
 
-echo "ℹ️  Cobertura (líneas): ${PCT}%"
+echo "ℹ️  Line coverage: ${PCT}%"
 if [ "${PCT}" -lt "${THRESHOLD}" ]; then
-  echo "❌ Cobertura ${PCT}% < umbral ${THRESHOLD}%"
+  echo "❌ Coverage ${PCT}% is below the threshold ${THRESHOLD}%"
   exit 1
 fi
 
-echo "✅ Cobertura ${PCT}% ≥ ${THRESHOLD}% (OK)"
+echo "✅ Coverage ${PCT}% ≥ ${THRESHOLD}% (OK)"
