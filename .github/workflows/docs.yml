@@ -37,13 +37,11 @@ jobs:
           set -euo pipefail
 
           REPO_NAME="$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)"
-          HOSTING_BASE_PATH="${REPO_NAME}/api"   # publish DocC at /<repo>/api
+          HOSTING_BASE_PATH="${REPO_NAME}/api"
 
-          # Clean output
           rm -rf site
           mkdir -p site
 
-          # Generate DocC under site/api with proper base path
           swift package --allow-writing-to-directory site \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -51,16 +49,13 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${HOSTING_BASE_PATH}"
 
-          # If DocC nested everything under a module folder, flatten it
           if [[ -d site/api/NearJsonRpcClient && -f site/api/NearJsonRpcClient/index.html ]]; then
             rsync -a "site/api/NearJsonRpcClient/" "site/api/"
             rm -rf "site/api/NearJsonRpcClient"
           fi
 
-          # Ensure DocC viewer required files exist and are non-trivial
           mkdir -p site/api/data site/api/data/documentation site/api/index
 
-          # If documentation.json is missing, copy first module JSON
           if [[ ! -s site/api/data/documentation.json ]]; then
             MOD_JSON="$(ls site/api/data/documentation/*.json 2>/dev/null | head -n1 || true)"
             if [[ -n "${MOD_JSON}" ]]; then
@@ -68,14 +63,10 @@ jobs:
             fi
           fi
 
-          # Force non-empty linkable-entities.json (DocC viewer crashes on `{}`)
           printf '%s\n' '{"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}' > site/api/data/linkable-entities.json
-
-          # Minimal (non-empty) search index to satisfy viewer
           printf '%s\n' '{"records":[]}' > site/api/index/index.json
 
-          # Create a simple landing page at /<repo> that links to /api
-          cat > site/index.html <<'HTML'
+          cat > site/index.html << 'EOF'
           <!doctype html>
           <html lang="en">
           <meta charset="utf-8">
@@ -101,25 +92,21 @@ jobs:
             </div>
             <h3>Quick Start</h3>
             <pre><code>import NearJsonRpcClient
-import NearJsonRpcTypes
+          import NearJsonRpcTypes
 
-let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
-Task {
-  let latest = try await client.block(.init(finality: .final))
-  print("height:", latest.header?.height ?? 0)
-}</code></pre>
+          let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
+          Task {
+            let latest = try await client.block(.init(finality: .final))
+            print("height:", latest.header?.height ?? 0)
+          }</code></pre>
             <footer>Docs hosted via GitHub Pages • API reference at <code>/api/</code></footer>
           </div>
           </html>
-          HTML
+          EOF
 
-          # 404 fallback to landing (avoids GitHub Pages generic error)
           printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">' > site/404.html
-
-          # Disable Jekyll processing (DocC assets live in /api)
           touch site/.nojekyll
 
-          # Final gates (fail build if something is missing)
           test -f site/api/index.html
           test -s site/api/data/documentation.json
           test -s site/api/data/linkable-entities.json
