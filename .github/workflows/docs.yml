@@ -32,14 +32,13 @@ jobs:
         run: swift build -c release
 
       - name: Generate DocC static site (NearJsonRpcClient)
-        env:
-          BASE_PATH: ${{ github.event.repository.name }}
         shell: bash
         run: |
           set -euo pipefail
           rm -rf docs
 
-          # Generate DocC site with correct base path
+          BASE_PATH="${GITHUB_REPOSITORY##*/}"
+
           swift package --allow-writing-to-directory docs \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -47,42 +46,38 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
 
-          # Flatten if DocC nested under module folder
+          # Flatten if nested under module folder
           if [[ -d docs/NearJsonRpcClient && -f docs/NearJsonRpcClient/index.html ]]; then
             rsync -a "docs/NearJsonRpcClient/" "docs/"
             rm -rf "docs/NearJsonRpcClient"
           fi
 
-          # Ensure minimal structure
+          # Ensure required structure
           mkdir -p docs/data docs/data/documentation docs/index
 
           # Ensure documentation.json at /data
           if [[ ! -s docs/data/documentation.json ]]; then
-            MOD_JSON=$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)
-            if [[ -n "${MOD_JSON:-}" ]]; then
+            MOD_JSON="$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)"
+            if [[ -n "${MOD_JSON}" ]]; then
               cp "${MOD_JSON}" docs/data/documentation.json
             fi
           fi
 
-          # Ensure non-empty linkable-entities.json (DocC viewer crashes on {})
-          if [[ ! -s docs/data/linkable-entities.json || $(wc -c < docs/data/linkable-entities.json | tr -d ' ') -lt 10 ]]; then
-            cat > docs/data/linkable-entities.json <<'JSON'
-{"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}
-JSON
+          # Ensure non-empty linkable-entities.json (DocC viewer crashes on `{}`)
+          if [[ ! -s docs/data/linkable-entities.json ]] || [[ $(wc -c < docs/data/linkable-entities.json | tr -d ' ') -lt 10 ]]; then
+            printf '%s\n' '{"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}' > docs/data/linkable-entities.json
           fi
 
           # Minimal search index
           if [[ ! -s docs/index/index.json ]]; then
-            printf '{"records":[]}\n' > docs/index/index.json
+            printf '%s\n' '{"records":[]}' > docs/index/index.json
           fi
 
-          # Avoid Jekyll
+          # Avoid Jekyll processing
           touch docs/.nojekyll
 
-          # 404 fallback to root
-          cat > docs/404.html <<'HTML'
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">
-HTML
+          # 404 fallback to root (simple redirect)
+          printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">' > docs/404.html
 
           # Hard gates
           test -f docs/index.html
@@ -99,7 +94,6 @@ HTML
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
