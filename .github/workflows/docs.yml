@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           rm -rf docs
 
-          # Generar sitio DocC estático con base-path de Pages
+          # Generate DocC site with correct base path
           swift package --allow-writing-to-directory docs \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -47,16 +47,16 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
 
-          # Si DocC anida el sitio en /NearJsonRpcClient/, aplánalo a /docs
+          # Flatten if DocC nested under module folder
           if [[ -d docs/NearJsonRpcClient && -f docs/NearJsonRpcClient/index.html ]]; then
             rsync -a "docs/NearJsonRpcClient/" "docs/"
             rm -rf "docs/NearJsonRpcClient"
           fi
 
-          # Asegurar estructura mínima
+          # Ensure minimal structure
           mkdir -p docs/data docs/data/documentation docs/index
 
-          # Asegurar documentation.json en docs/data (algunas versiones lo dejan sólo en /data/documentation/*.json)
+          # Ensure documentation.json at /data
           if [[ ! -s docs/data/documentation.json ]]; then
             MOD_JSON=$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)
             if [[ -n "${MOD_JSON:-}" ]]; then
@@ -64,35 +64,30 @@ jobs:
             fi
           fi
 
-          # ---- FIX CRÍTICO: linkable-entities.json vacío rompe el visor DocC ----
-          # Si no existe o pesa < 10 bytes ({}), escribir un stub válido.
+          # Ensure non-empty linkable-entities.json (DocC viewer crashes on {})
           if [[ ! -s docs/data/linkable-entities.json || $(wc -c < docs/data/linkable-entities.json | tr -d ' ') -lt 10 ]]; then
             cat > docs/data/linkable-entities.json <<'JSON'
 {"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}
 JSON
           fi
 
-          # Índice de búsqueda mínimo
-          [[ -s docs/index/index.json ]] || printf '{"records":[]}\n' > docs/index/index.json
+          # Minimal search index
+          if [[ ! -s docs/index/index.json ]]; then
+            printf '{"records":[]}\n' > docs/index/index.json
+          fi
 
-          # Evitar que GitHub Pages pase Jekyll
+          # Avoid Jekyll
           touch docs/.nojekyll
 
-          # 404 → index (suave)
+          # 404 fallback to root
           cat > docs/404.html <<'HTML'
 <!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">
 HTML
 
-          # Diagnóstico y hard-gates (si algo está mal, fallar el job)
-          echo "== DocC payload sizes =="
-          test -f docs/index.html || { echo "::error ::missing docs/index.html"; exit 1; }
-          test -s docs/data/documentation.json || { echo "::error ::missing docs/data/documentation.json"; exit 1; }
-          test -s docs/data/linkable-entities.json || { echo "::error ::missing docs/data/linkable-entities.json"; exit 1; }
-          LKSZ=$(wc -c < docs/data/linkable-entities.json | tr -d ' ')
-          echo "linkable-entities.json size: ${LKSZ} bytes"
-          if [[ "${LKSZ}" -lt 10 ]]; then
-            echo "::error ::linkable-entities.json still too small"; exit 1
-          fi
+          # Hard gates
+          test -f docs/index.html
+          test -s docs/data/documentation.json
+          test -s docs/data/linkable-entities.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
