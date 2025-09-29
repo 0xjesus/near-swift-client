@@ -5,6 +5,7 @@ on:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.2'
+          xcode-version: "15.2"
 
       - name: Swift version
         run: swift --version
@@ -48,36 +49,22 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-data
-          path: .build/debug/codecov/*.json
+          path: .build/**/codecov/*.json
           if-no-files-found: ignore
-          
+
+      # ✅ Gate robusto: usa tu script y evita BIN/Contents/MacOS rotos
       - name: Coverage gate (fail if < 80%)
         if: always()
-        shell: bash
         run: |
-          set -euo pipefail
-          swift test --enable-code-coverage
-          profdata=$(ls .build/debug/codecov/*.profraw | head -n1 || true)
-          if [[ -z "${profdata:-}" ]]; then
-            echo "No profraw found"; exit 1
-          fi
-          xcrun llvm-profdata merge -sparse .build/debug/codecov/*.profraw -o .build/debug/default.profdata
-          BIN=$(find .build/debug -name "*Tests.xctest" -type d -maxdepth 2 | head -n1)
-          xcrun llvm-cov report "$BIN/Contents/MacOS/$(basename "$BIN" .xctest)" \
-            -instr-profile .build/debug/default.profdata > coverage.txt
-          cat coverage.txt
-          PCT=$(awk '/TOTAL/ {gsub("%",""); print $NF}' coverage.txt)
-          PCT=${PCT%.*}
-          echo "Coverage: ${PCT}%"
-          if [[ "${PCT:-0}" -lt 80 ]]; then
-            echo "Coverage below 80%"; exit 1
-          fi
+          chmod +x Scripts/coverage-summary.sh || true
+          ./Scripts/coverage-summary.sh 80
+
       - name: Coverage (overall ≥ 50%)
         run: |
-          chmod +x Scripts/coverage-summary.sh
+          chmod +x Scripts/coverage-summary.sh || true
           ./Scripts/coverage-summary.sh 50
 
       - name: Coverage (core ≥ 80%)
         run: |
-          chmod +x Scripts/coverage-core.sh
+          chmod +x Scripts/coverage-core.sh || true
           ./Scripts/coverage-core.sh 80

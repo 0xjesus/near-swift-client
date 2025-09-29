@@ -1,8 +1,10 @@
 name: Lint
+
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: ["**"]
+  workflow_dispatch:
 
 jobs:
   swiftformat:
@@ -11,5 +13,20 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install SwiftFormat
         run: brew install swiftformat
-      - name: Check formatting
+
+      # En PRs, solo lint (falla si no está formateado)
+      - name: Lint (PRs)
+        if: github.event_name == 'pull_request'
         run: swiftformat . --lint --swiftversion 5.9
+
+      # En pushes, auto-formatea y auto-commitea (excepto en main)
+      - name: Format (pushes)
+        if: github.event_name == 'push'
+        run: swiftformat . --swiftversion 5.9
+
+      - name: Auto-commit formatting (push branches; no main)
+        if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: swiftformat (CI)"
+          add_options: "-A"

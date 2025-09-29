@@ -1,4 +1,3 @@
-# .github/workflows/semantic-pr.yml
 name: semantic-pr
 on:
   pull_request_target:
