@@ -1,36 +1,28 @@
 #!/usr/bin/env bash
+# Fetch NEAR OpenAPI/OpenRPC (single source, no fallbacks).
+# Writes the schema to Scripts/schemas/near-openapi.json
+
 set -euo pipefail
 
-SCHEMADIR="Scripts/schemas"
-SCHEMA="$SCHEMADIR/near-openapi.json"
-TMP="$SCHEMADIR/.near-openapi.tmp.json"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCHEMAS_DIR="${ROOT}/Scripts/schemas"
+OUT="${SCHEMAS_DIR}/near-openapi.json"
+TMP="$(mktemp -t near-openapi.XXXXXX.json)"
 
-mkdir -p "$SCHEMADIR"
+mkdir -p "${SCHEMAS_DIR}"
 
-echo "→ Descargando OpenAPI (nearcore y fallbacks)…"
-# Fuente 1 (nearcore): ajústala si cambia la ruta upstream
-curl -fsSL -o "$TMP" https://raw.githubusercontent.com/near/nearcore/master/chain/jsonrpc/openrpc.json || true
+URL="https://raw.githubusercontent.com/near/nearcore/master/chain/jsonrpc/openapi/openapi.json"
 
-# Fallbacks comunitarios (mantenlos en este orden)
-if [[ ! -s "$TMP" ]]; then
-  curl -fsSL -o "$TMP" https://raw.githubusercontent.com/near/nearcore/master/rpc/openrpc.json || true
-fi
-if [[ ! -s "$TMP" ]]; then
-  curl -fsSL -o "$TMP" https://raw.githubusercontent.com/PolyProgrammist/near-openapi-client/main/openapi.json || true
-fi
+echo "→ Downloading OpenAPI from:"
+echo "   ${URL}"
+curl -fsSL "${URL}" -o "${TMP}"
 
-test -s "$TMP" || { echo "ERROR: no fue posible descargar OpenAPI"; exit 2; }
-
-echo "→ Parcheando para JSON‑RPC en POST '/'" 
-# Si tienes jq, limpiamos paths y forzamos único endpoint '/'
-if command -v jq >/dev/null 2>&1; then
-  jq '
-    # borra todos los paths, deja solo "/"
-    .paths = { "/": { "post": { "summary": "NEAR JSON-RPC (batched)", "operationId": "rpc", "responses": { "200": { "description": "OK" }}}}} 
-  ' "$TMP" > "$SCHEMA"
-else
-  # Sin jq, copiado directo (el cliente ya fuerza "/")
-  mv "$TMP" "$SCHEMA"
+if [[ ! -s "${TMP}" ]]; then
+  echo "❌ Downloaded file is empty. Aborting."
+  exit 1
 fi
 
-echo "OK: $SCHEMA"
+mv "${TMP}" "${OUT}"
+
+# Nota: forzamos POST "/" de JSON‑RPC en el cliente (no parchamos el spec aquí).
+echo "OK: Wrote ${OUT} (size: $(wc -c < "${OUT}") bytes)"

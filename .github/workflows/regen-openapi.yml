@@ -26,43 +26,24 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "15.2"
+          xcode-version: '15.2'
 
-      - name: Swift version
-        run: swift --version
+      - name: Fetch OpenAPI (single source)
+        run: bash Scripts/fetch-openapi.sh
 
-      - name: Fetch OpenAPI (nearcore or fallback)
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p Scripts
-          SCHEMA="Scripts/openapi.json"
-          rm -f "$SCHEMA"
-          curl -fsSL https://raw.githubusercontent.com/near/nearcore/master/tools/openapi/rpc.json -o "$SCHEMA" || true
-          if [[ ! -s "$SCHEMA" ]]; then
-            curl -fsSL https://raw.githubusercontent.com/PolyProgrammist/near-openapi-client/main/openapi.json -o "$SCHEMA" || true
-          fi
-          if [[ ! -s "$SCHEMA" ]]; then
-            echo "ERROR: No se pudo obtener OpenAPI desde fuentes conocidas"
-            exit 1
-          fi
-          echo "OpenAPI guardado en $SCHEMA (size: $(wc -c < "$SCHEMA") bytes)"
-
-      - name: Regenerate Swift types/client
+      - name: Regenerate Swift types/client (wrapper)
         run: swift Scripts/generate-from-openapi.swift
 
-      - name: Build
-        run: swift build -v
-
-      - name: Test (with coverage)
+      - name: Build & test (with coverage)
         run: swift test --enable-code-coverage
 
       - name: Create PR with changes
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "fix(openapi): regenerate Swift types & client from spec"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(openapi): regenerate Swift types & client"
           branch: chore/regen-openapi
-          title: "fix(openapi): regenerate Swift types & client from spec"
+          title: "chore(openapi): regenerate Swift types & client"
           body: |
             Automated regeneration from NEAR OpenAPI.
             - Force JSON-RPC POST "/"
