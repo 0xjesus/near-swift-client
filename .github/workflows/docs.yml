@@ -31,63 +31,104 @@ jobs:
       - name: Build (Release) for DocC
         run: swift build -c release
 
-      - name: Generate DocC static site (NearJsonRpcClient)
+      - name: Generate DocC static site (to /api) + landing page
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf docs
 
-          BASE_PATH="${GITHUB_REPOSITORY##*/}"
+          REPO_NAME="$(echo "$GITHUB_REPOSITORY" | cut -d/ -f2)"
+          HOSTING_BASE_PATH="${REPO_NAME}/api"   # publish DocC at /<repo>/api
 
-          swift package --allow-writing-to-directory docs \
+          # Clean output
+          rm -rf site
+          mkdir -p site
+
+          # Generate DocC under site/api with proper base path
+          swift package --allow-writing-to-directory site \
             generate-documentation \
             --target NearJsonRpcClient \
-            --output-path docs \
+            --output-path site/api \
             --transform-for-static-hosting \
-            --hosting-base-path "${BASE_PATH}"
+            --hosting-base-path "${HOSTING_BASE_PATH}"
 
-          # Flatten if nested under module folder
-          if [[ -d docs/NearJsonRpcClient && -f docs/NearJsonRpcClient/index.html ]]; then
-            rsync -a "docs/NearJsonRpcClient/" "docs/"
-            rm -rf "docs/NearJsonRpcClient"
+          # If DocC nested everything under a module folder, flatten it
+          if [[ -d site/api/NearJsonRpcClient && -f site/api/NearJsonRpcClient/index.html ]]; then
+            rsync -a "site/api/NearJsonRpcClient/" "site/api/"
+            rm -rf "site/api/NearJsonRpcClient"
           fi
 
-          # Ensure required structure
-          mkdir -p docs/data docs/data/documentation docs/index
+          # Ensure DocC viewer required files exist and are non-trivial
+          mkdir -p site/api/data site/api/data/documentation site/api/index
 
-          # Ensure documentation.json at /data
-          if [[ ! -s docs/data/documentation.json ]]; then
-            MOD_JSON="$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)"
+          # If documentation.json is missing, copy first module JSON
+          if [[ ! -s site/api/data/documentation.json ]]; then
+            MOD_JSON="$(ls site/api/data/documentation/*.json 2>/dev/null | head -n1 || true)"
             if [[ -n "${MOD_JSON}" ]]; then
-              cp "${MOD_JSON}" docs/data/documentation.json
+              cp "${MOD_JSON}" site/api/data/documentation.json
             fi
           fi
 
-          # Ensure non-empty linkable-entities.json (DocC viewer crashes on `{}`)
-          if [[ ! -s docs/data/linkable-entities.json ]] || [[ $(wc -c < docs/data/linkable-entities.json | tr -d ' ') -lt 10 ]]; then
-            printf '%s\n' '{"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}' > docs/data/linkable-entities.json
-          fi
+          # Force non-empty linkable-entities.json (DocC viewer crashes on `{}`)
+          printf '%s\n' '{"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}' > site/api/data/linkable-entities.json
 
-          # Minimal search index
-          if [[ ! -s docs/index/index.json ]]; then
-            printf '%s\n' '{"records":[]}' > docs/index/index.json
-          fi
+          # Minimal (non-empty) search index to satisfy viewer
+          printf '%s\n' '{"records":[]}' > site/api/index/index.json
 
-          # Avoid Jekyll processing
-          touch docs/.nojekyll
+          # Create a simple landing page at /<repo> that links to /api
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>NEAR Swift JSON‑RPC Client • Docs</title>
+          <style>
+            body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Inter,"Helvetica Neue",Arial,sans-serif;margin:0;background:#0e1116;color:#e6edf3}
+            .wrap{max-width:940px;margin:0 auto;padding:56px 20px}
+            h1{font-size:28px;margin:0 0 12px}
+            p{color:#9da7b3;line-height:1.6}
+            pre{background:#0b0f14;border:1px solid #1b2330;border-radius:10px;padding:14px;overflow:auto}
+            code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+            .btns a{display:inline-block;margin-right:12px;margin-top:10px;padding:10px 14px;border-radius:8px;text-decoration:none;border:1px solid #2b3545;color:#e6edf3}
+            .btns a.primary{background:#238636;border-color:#238636}
+            footer{margin-top:42px;color:#77808c;font-size:14px}
+          </style>
+          <div class="wrap">
+            <h1>NEAR Swift JSON‑RPC Client</h1>
+            <p>Type‑safe Swift packages for NEAR JSON‑RPC. Generated from the official OpenAPI and tested in CI.</p>
+            <div class="btns">
+              <a class="primary" href="./api/">Open API Reference</a>
+              <a href="https://github.com/0xjesus/near-swift-client">GitHub</a>
+            </div>
+            <h3>Quick Start</h3>
+            <pre><code>import NearJsonRpcClient
+import NearJsonRpcTypes
 
-          # 404 fallback to root (simple redirect)
-          printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">' > docs/404.html
+let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
+Task {
+  let latest = try await client.block(.init(finality: .final))
+  print("height:", latest.header?.height ?? 0)
+}</code></pre>
+            <footer>Docs hosted via GitHub Pages • API reference at <code>/api/</code></footer>
+          </div>
+          </html>
+          HTML
 
-          # Hard gates
-          test -f docs/index.html
-          test -s docs/data/documentation.json
-          test -s docs/data/linkable-entities.json
+          # 404 fallback to landing (avoids GitHub Pages generic error)
+          printf '%s\n' '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">' > site/404.html
+
+          # Disable Jekyll processing (DocC assets live in /api)
+          touch site/.nojekyll
+
+          # Final gates (fail build if something is missing)
+          test -f site/api/index.html
+          test -s site/api/data/documentation.json
+          test -s site/api/data/linkable-entities.json
+          test -f site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: site
 
   deploy:
     needs: build
