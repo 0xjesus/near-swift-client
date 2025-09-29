@@ -28,16 +28,18 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Build (Release)
+      - name: Build (Release) for DocC
         run: swift build -c release
 
-      - name: Generate DocC site (NearJsonRpcClient)
+      - name: Generate DocC static site (NearJsonRpcClient)
         env:
+          # usa el nombre del repo como base path: https://<user>.github.io/<repo>/
           BASE_PATH: ${{ github.event.repository.name }}
         run: |
           set -euo pipefail
           rm -rf docs
-          # Generate static DocC site (no --disable-sandbox; allow writing to docs/)
+
+          # Genera sitio estático DocC
           swift package --allow-writing-to-directory docs \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -45,18 +47,39 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
 
-          # Some plugin versions nest output under target name. Flatten if needed.
-          if [[ ! -f docs/index.html && -d docs/NearJsonRpcClient ]]; then
+          echo "== After generation =="
+          (cd docs && find . -maxdepth 3 -print)
+
+          # Si DocC deja todo bajo docs/NearJsonRpcClient/, aplánalo
+          if [[ -d docs/NearJsonRpcClient && -d docs/NearJsonRpcClient/data ]]; then
             echo "Flattening NearJsonRpcClient/ into docs/"
             rsync -a "docs/NearJsonRpcClient/" "docs/"
             rm -rf "docs/NearJsonRpcClient"
           fi
 
-          # Ensure Pages serves all DocC assets
+          echo "== Final docs tree =="
+          (cd docs && find . -maxdepth 3 -print)
+
+          # Fallbacks: crea los índices si no existen donde el viewer los espera
+          if [[ ! -f docs/data/documentation.json ]]; then
+            MOD_JSON=$(find docs/data/documentation -maxdepth 1 -name "*.json" | head -n1 || true)
+            if [[ -n "${MOD_JSON:-}" ]]; then
+              echo "Patching: ${MOD_JSON} -> docs/data/documentation.json"
+              cp "${MOD_JSON}" docs/data/documentation.json
+            fi
+          fi
+
+          if [[ ! -f docs/data/linkable-entities.json ]]; then
+            echo "Patching: creating empty docs/data/linkable-entities.json"
+            echo '{}' > docs/data/linkable-entities.json
+          fi
+
+          # Evita que Jekyll bloquee assets DocC
           touch docs/.nojekyll
 
-          # Final sanity check
-          test -f docs/index.html || (echo "docs/index.html not found"; ls -la docs; exit 1)
+          # Sanity checks
+          test -f docs/index.html
+          test -f docs/data/documentation.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
