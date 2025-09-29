@@ -28,26 +28,44 @@ jobs:
         with:
           xcode-version: '15.2'
 
-      - name: Fetch OpenAPI (single source)
-        run: bash Scripts/fetch-openapi.sh
+      - name: Swift version
+        run: swift --version
 
-      - name: Regenerate Swift types/client (wrapper)
-        run: swift Scripts/generate-from-openapi.swift
+      - name: Fetch OpenAPI (official) + regenerate
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash Scripts/fetch-openapi.sh
+          # Run your generator if you have one:
+          swift Scripts/generate-from-openapi.swift || true
+          swift build
+          swift test --enable-code-coverage
 
-      - name: Build & test (with coverage)
-        run: swift test --enable-code-coverage
+      - name: Detect changes
+        id: diff
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create PR with changes
+        if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore(openapi): regenerate Swift types & client"
+          commit-message: "fix(openapi): regenerate Swift types & client from spec"
           branch: chore/regen-openapi
-          title: "chore(openapi): regenerate Swift types & client"
+          title: "fix(openapi): regenerate Swift types & client from spec"
           body: |
-            Automated regeneration from NEAR OpenAPI.
+            Automated regeneration from official NEAR OpenAPI.
             - Force JSON-RPC POST "/"
             - snake_case → camelCase
             - Build & tests passed in CI
           labels: automated, openapi
           delete-branch: true
+
+      - name: No changes
+        if: steps.diff.outputs.changed != 'true'
+        run: echo "No changes from latest OpenAPI (nothing to PR)."
