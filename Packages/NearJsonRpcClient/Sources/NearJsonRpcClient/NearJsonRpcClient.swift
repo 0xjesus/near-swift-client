@@ -2,6 +2,7 @@ import Foundation
 import NearJsonRpcTypes
 
 // MARK: - Envoltorios JSON-RPC (lado cliente; distintos a los de Types)
+
 public struct JsonRpcRequest<Params: Encodable>: Encodable {
     public let jsonrpc = "2.0"
     public var id: String
@@ -29,12 +30,13 @@ public struct JsonRpcEnvelope<Result: Decodable>: Decodable {
 }
 
 // MARK: - Cliente
+
 public final class NearJsonRpcClient {
     public struct Config {
         public let endpoint: URL
-        public var headers: [String:String] = ["Content-Type": "application/json"]
+        public var headers: [String: String] = ["Content-Type": "application/json"]
         public var timeout: TimeInterval = 30
-        public init(endpoint: URL, headers: [String:String] = [:], timeout: TimeInterval = 30) {
+        public init(endpoint: URL, headers: [String: String] = [:], timeout: TimeInterval = 30) {
             self.endpoint = endpoint
             self.headers.merge(headers, uniquingKeysWith: { _, new in new })
             self.timeout = timeout
@@ -50,9 +52,10 @@ public final class NearJsonRpcClient {
     }
 
     // MARK: - Core call
-    public func call<Params: Encodable, Result: Decodable>(
+
+    public func call<Result: Decodable>(
         method: String,
-        params: Params? = nil,
+        params: (some Encodable)? = nil,
         requestId: String = UUID().uuidString
     ) async throws -> Result {
         // Fuerza path raíz "/"
@@ -69,7 +72,9 @@ public final class NearJsonRpcClient {
         if req.value(forHTTPHeaderField: "Accept") == nil {
             req.setValue("application/json", forHTTPHeaderField: "Accept")
         }
-        for (k, v) in cfg.headers { req.setValue(v, forHTTPHeaderField: k) }
+        for (k, v) in cfg.headers {
+            req.setValue(v, forHTTPHeaderField: k)
+        }
 
         // Encode envelope
         let enc = JSONEncoder()
@@ -79,7 +84,7 @@ public final class NearJsonRpcClient {
         // Red
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-        guard (200..<300).contains(http.statusCode) else {
+        guard (200 ..< 300).contains(http.statusCode) else {
             throw URLError(.init(rawValue: http.statusCode))
         }
 
@@ -94,10 +99,11 @@ public final class NearJsonRpcClient {
     }
 
     // MARK: - Raw JSON-RPC (para power users / tests)
-    public func rawCall<R: Decodable, P: Encodable>(
+
+    public func rawCall<R: Decodable>(
         method: String,
-        params: P,
-        decode type: R.Type = R.self
+        params: some Encodable,
+        decode _: R.Type = R.self
     ) async throws -> R {
         // 1) Envelope
         let encoder = JSONEncoder()
@@ -112,11 +118,13 @@ public final class NearJsonRpcClient {
         req.httpBody = body
         req.timeoutInterval = cfg.timeout
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        for (k, v) in cfg.headers { req.setValue(v, forHTTPHeaderField: k) }
+        for (k, v) in cfg.headers {
+            req.setValue(v, forHTTPHeaderField: k)
+        }
 
         // 3) Red
         let (data, resp) = try await session.data(for: req)
-        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        guard let http = resp as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             throw URLError(.badServerResponse)
         }
 
@@ -131,17 +139,19 @@ public final class NearJsonRpcClient {
 }
 
 // MARK: - Parámetros & Tipos helpers (idénticos a los de Types)
-public enum Finality: String, Codable { case optimistic = "optimistic", final = "final" }
+
+public enum Finality: String, Codable { case optimistic, final }
 
 public enum BlockId: Codable, Equatable {
     case height(Int), hash(String)
     public func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch self {
-        case .height(let h): try c.encode(h)
-        case .hash(let s): try c.encode(s)
+        case let .height(h): try c.encode(h)
+        case let .hash(s): try c.encode(s)
         }
     }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.singleValueContainer()
         if let i = try? c.decode(Int.self) { self = .height(i); return }
@@ -153,16 +163,16 @@ public enum BlockId: Codable, Equatable {
 public struct BlockParams: Encodable {
     public var finality: Finality?
     public var block_id: BlockId?
-    public init(finality: Finality) { self.finality = finality; self.block_id = nil }
-    public init(blockId: BlockId) { self.block_id = blockId; self.finality = nil }
+    public init(finality: Finality) { self.finality = finality; block_id = nil }
+    public init(blockId: BlockId) { block_id = blockId; finality = nil }
 }
 
 public struct ChunkParams: Encodable {
     public var chunk_id: String?
     public var block_id: BlockId?
     public var shard_id: Int?
-    public init(chunkId: String) { self.chunk_id = chunkId }
-    public init(blockId: BlockId, shardId: Int) { self.block_id = blockId; self.shard_id = shardId }
+    public init(chunkId: String) { chunk_id = chunkId }
+    public init(blockId: BlockId, shardId: Int) { block_id = blockId; shard_id = shardId }
 }
 
 public enum ValidatorsParams: Encodable {
@@ -173,7 +183,7 @@ public enum ValidatorsParams: Encodable {
         switch self {
         case .current:
             try c.encode([JSONValue.null]) // tests esperan [null]
-        case .byEpochId(let id):
+        case let .byEpochId(id):
             try c.encode(["epoch_id": id])
         }
     }
@@ -192,8 +202,8 @@ public struct SendTxParams: Encodable {
     public let signed_tx_base64: String
     public var wait_until: WaitUntil?
     public init(signedTxBase64: String, waitUntil: WaitUntil? = nil) {
-        self.signed_tx_base64 = signedTxBase64
-        self.wait_until = waitUntil
+        signed_tx_base64 = signedTxBase64
+        wait_until = waitUntil
     }
 }
 
@@ -202,9 +212,9 @@ public struct TxStatusParams: Encodable {
     public let sender_account_id: String
     public var wait_until: WaitUntil?
     public init(txHash: String, senderAccountId: String, waitUntil: WaitUntil? = nil) {
-        self.tx_hash = txHash
-        self.sender_account_id = senderAccountId
-        self.wait_until = waitUntil
+        tx_hash = txHash
+        sender_account_id = senderAccountId
+        wait_until = waitUntil
     }
 }
 
@@ -214,17 +224,19 @@ public struct ViewAccountParams: Encodable {
     public var finality: Finality?
     public var block_id: BlockId?
     public let account_id: String
-    public init(accountId: String, finality: Finality) { self.account_id = accountId; self.finality = finality }
-    public init(accountId: String, blockId: BlockId) { self.account_id = accountId; self.block_id = blockId }
+    public init(accountId: String, finality: Finality) { account_id = accountId; self.finality = finality }
+    public init(accountId: String, blockId: BlockId) { account_id = accountId; block_id = blockId }
 }
+
 public struct ViewCodeParams: Encodable {
     public let request_type = "view_code"
     public var finality: Finality?
     public var block_id: BlockId?
     public let account_id: String
-    public init(accountId: String, finality: Finality) { self.account_id = accountId; self.finality = finality }
-    public init(accountId: String, blockId: BlockId) { self.account_id = accountId; self.block_id = blockId }
+    public init(accountId: String, finality: Finality) { account_id = accountId; self.finality = finality }
+    public init(accountId: String, blockId: BlockId) { account_id = accountId; block_id = blockId }
 }
+
 public struct ViewStateParams: Encodable {
     public let request_type = "view_state"
     public var finality: Finality?
@@ -232,12 +244,14 @@ public struct ViewStateParams: Encodable {
     public let account_id: String
     public let prefix_base64: String
     public init(accountId: String, finality: Finality, prefixBase64: String) {
-        self.account_id = accountId; self.finality = finality; self.prefix_base64 = prefixBase64
+        account_id = accountId; self.finality = finality; prefix_base64 = prefixBase64
     }
+
     public init(accountId: String, blockId: BlockId, prefixBase64: String) {
-        self.account_id = accountId; self.block_id = blockId; self.prefix_base64 = prefixBase64
+        account_id = accountId; block_id = blockId; prefix_base64 = prefixBase64
     }
 }
+
 public struct ViewAccessKeyParams: Encodable {
     public let request_type = "view_access_key"
     public var finality: Finality?
@@ -245,25 +259,27 @@ public struct ViewAccessKeyParams: Encodable {
     public let account_id: String
     public let public_key: String
     public init(accountId: String, publicKey: String, finality: Finality) {
-        self.account_id = accountId; self.public_key = publicKey; self.finality = finality
+        account_id = accountId; public_key = publicKey; self.finality = finality
     }
 }
+
 public struct ViewAccessKeyListParams: Encodable {
     public let request_type = "view_access_key_list"
     public var finality: Finality?
     public var block_id: BlockId?
     public let account_id: String
     public init(accountId: String, finality: Finality) {
-        self.account_id = accountId; self.finality = finality
+        account_id = accountId; self.finality = finality
     }
 }
+
 public struct ChangesAccountParams: Encodable {
     public let changes_type = "account_changes"
     public let account_ids: [String]
     public var finality: Finality?
     public var block_id: BlockId?
-    public init(accountIds: [String], blockId: BlockId) { self.account_ids = accountIds; self.block_id = blockId }
-    public init(accountIds: [String], finality: Finality) { self.account_ids = accountIds; self.finality = finality }
+    public init(accountIds: [String], blockId: BlockId) { account_ids = accountIds; block_id = blockId }
+    public init(accountIds: [String], finality: Finality) { account_ids = accountIds; self.finality = finality }
 }
 
 // Protocol / Genesis
@@ -271,7 +287,7 @@ public struct ProtocolConfigParams: Encodable {
     public var finality: Finality?
     public var block_id: BlockId?
     public init(finality: Finality) { self.finality = finality }
-    public init(blockId: BlockId) { self.block_id = blockId }
+    public init(blockId: BlockId) { block_id = blockId }
 }
 
 // Light client
@@ -285,12 +301,14 @@ public struct LightClientProofParams: Encodable {
     public static func transaction(txHash: String, senderId: String, head: String) -> Self {
         .init(type: .transaction, transaction_hash: txHash, sender_id: senderId, receipt_id: nil, light_client_head: head)
     }
+
     public static func receipt(receiptId: String, head: String) -> Self {
         .init(type: .receipt, transaction_hash: nil, sender_id: nil, receipt_id: receiptId, light_client_head: head)
     }
 }
 
 // MARK: - Métodos tipados
+
 public extension NearJsonRpcClient {
     // Bloques / Chunks / Validadores
     func block(_ p: BlockParams) async throws -> BlockView { try await call(method: "block", params: p) }
@@ -306,7 +324,7 @@ public extension NearJsonRpcClient {
     func accountChanges(_ p: ChangesAccountParams) async throws -> StateChangesResult { try await call(method: "changes", params: p) }
 
     // Protocolo / Génesis
-    func getGenesisConfig() async throws -> GenesisConfig { try await call(method: "EXPERIMENTAL_genesis_config", params: Optional<Int>.none) }
+    func getGenesisConfig() async throws -> GenesisConfig { try await call(method: "EXPERIMENTAL_genesis_config", params: Int?.none) }
     func getProtocolConfig(_ p: ProtocolConfigParams) async throws -> ProtocolConfig { try await call(method: "EXPERIMENTAL_protocol_config", params: p) }
 
     // Transacciones

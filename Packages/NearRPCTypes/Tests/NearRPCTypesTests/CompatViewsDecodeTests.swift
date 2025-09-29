@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class CompatViewsDecodeTests: XCTestCase {
-
     func testBlockView_header_epochId_or_epoch_id() throws {
         let camel = #"""
         {"author":"alice","header":{"height":1,"epochId":"E","prevHash":"p","prevStateRoot":"s","timestamp":1,"timestampNanosec":"1","randomValue":"r","gasPrice":"0","totalSupply":"0","challengesRoot":"c"},"chunks":[]}

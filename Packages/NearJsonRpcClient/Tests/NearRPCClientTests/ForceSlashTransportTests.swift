@@ -1,6 +1,6 @@
-import XCTest
 @testable import NearJsonRpcClient
 import NearJsonRpcTypes
+import XCTest
 
 final class ForceSlashTransportTests: XCTestCase {
     func testTransportForcesSlashPath() throws {

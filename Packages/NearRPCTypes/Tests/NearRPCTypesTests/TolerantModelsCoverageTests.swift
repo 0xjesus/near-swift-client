@@ -1,16 +1,15 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class TolerantModelsCoverageTests: XCTestCase {
-
-    private func decode<T: Decodable>(_ json: String, as type: T.Type) throws -> T {
+    private func decode<T: Decodable>(_ json: String, as _: T.Type) throws -> T {
         let data = Data(json.utf8)
         let dec = JSONDecoder()
         dec.keyDecodingStrategy = .convertFromSnakeCase
         return try dec.decode(T.self, from: data)
     }
 
-    private func encodeJSON<T: Encodable>(_ value: T) throws -> [String: Any] {
+    private func encodeJSON(_ value: some Encodable) throws -> [String: Any] {
         let data = try JSONEncoder().encode(value)
         return try JSONSerialization.jsonObject(with: data) as! [String: Any]
     }

@@ -1,5 +1,5 @@
-import XCTest
 @testable import NearJsonRpcClient
+import XCTest
 
 final class ForceSlashPostTests: XCTestCase {
     func testPostJsonForcesSlashAndMergesHeaders() async throws {
@@ -13,12 +13,12 @@ final class ForceSlashPostTests: XCTestCase {
             XCTAssertEqual(req.value(forHTTPHeaderField: "Accept"), "application/json")
             XCTAssertEqual(req.value(forHTTPHeaderField: "X-Custom"), "1")
             let resp = HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil,
-                                       headerFields: ["Content-Type":"application/json"])!
+                                       headerFields: ["Content-Type": "application/json"])!
             return (resp, Data(#"{"ok":true}"#.utf8))
         }
 
         let t = ForceSlashTransport(baseURL: URL(string: "https://rpc.testnet.near.org/whatever")!,
                                     session: session)
-        _ = try await t.postJSON(body: Data("{}".utf8), headers: ["X-Custom":"1"])
+        _ = try await t.postJSON(body: Data("{}".utf8), headers: ["X-Custom": "1"])
     }
 }

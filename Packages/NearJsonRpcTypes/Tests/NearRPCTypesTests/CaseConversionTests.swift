@@ -1,11 +1,12 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class CaseConversionTests: XCTestCase {
     struct Snake: Codable, Equatable {
         let block_hash: String
         let epoch_id: String
     }
+
     struct Camel: Codable, Equatable {
         let blockHash: String
         let epochId: String

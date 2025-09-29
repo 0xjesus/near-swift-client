@@ -1,12 +1,13 @@
-import XCTest
 @testable import NearJsonRpcClient
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class ClientWrapperCallTests: XCTestCase {
     override class func setUp() {
         super.setUp()
         URLProtocol.registerClass(URLProtocolMock.self)
     }
+
     override class func tearDown() {
         URLProtocol.unregisterClass(URLProtocolMock.self)
         super.tearDown()
@@ -21,7 +22,7 @@ final class ClientWrapperCallTests: XCTestCase {
             let body = #"{"jsonrpc":"2.0","id":"1","result":{"ok":true}}"#.data(using: .utf8)!
             let resp = HTTPURLResponse(
                 url: req.url!, statusCode: 200, httpVersion: nil,
-                headerFields: ["Content-Type":"application/json"]
+                headerFields: ["Content-Type": "application/json"]
             )!
             return (resp, body)
         }
@@ -42,7 +43,7 @@ final class ClientWrapperCallTests: XCTestCase {
             let body = #"{"jsonrpc":"2.0","id":"1","error":{"code":-32000,"message":"boom"}}"#.data(using: .utf8)!
             let resp = HTTPURLResponse(
                 url: req.url!, statusCode: 200, httpVersion: nil,
-                headerFields: ["Content-Type":"application/json"]
+                headerFields: ["Content-Type": "application/json"]
             )!
             return (resp, body)
         }

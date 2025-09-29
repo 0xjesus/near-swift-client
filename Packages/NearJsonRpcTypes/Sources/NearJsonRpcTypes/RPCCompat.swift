@@ -32,12 +32,12 @@ public enum RPCLiteral: Codable, Equatable {
         var c = encoder.singleValueContainer()
         switch self {
         case .null: try c.encodeNil()
-        case .int(let v): try c.encode(v)
-        case .bool(let v): try c.encode(v)
-        case .double(let v): try c.encode(v)
-        case .string(let v): try c.encode(v)
-        case .array(let v): try c.encode(v)
-        case .object(let v): try c.encode(v)
+        case let .int(v): try c.encode(v)
+        case let .bool(v): try c.encode(v)
+        case let .double(v): try c.encode(v)
+        case let .string(v): try c.encode(v)
+        case let .array(v): try c.encode(v)
+        case let .object(v): try c.encode(v)
         }
     }
 }
@@ -64,8 +64,8 @@ public enum RPCParams: Codable, Equatable {
     public func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch self {
-        case .object(let o): try c.encode(o)
-        case .array(let a): try c.encode(a)
+        case let .object(o): try c.encode(o)
+        case let .array(a): try c.encode(a)
         }
     }
 }
@@ -88,8 +88,8 @@ public enum RPCRequestID: Codable, Equatable {
     public func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch self {
-        case .int(let i): try c.encode(i)
-        case .string(let s): try c.encode(s)
+        case let .int(i): try c.encode(i)
+        case let .string(s): try c.encode(s)
         }
     }
 }
@@ -133,8 +133,8 @@ public struct RPCResponseEnvelope: Codable {
     public init(jsonrpc: String = "2.0", id: RPCRequestID?, result: JSONValue?, error: RPCError?) {
         self.jsonrpc = jsonrpc
         self.id = id
-        self._result = result
-        self._error = error
+        _result = result
+        _error = error
     }
 
     private enum CodingKeys: String, CodingKey {

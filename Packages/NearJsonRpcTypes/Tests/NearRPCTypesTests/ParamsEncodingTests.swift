@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class ParamsEncodingTests: XCTestCase {
-
     func testObjectParamsEncode() throws {
         let params: RPCParams = .object(["key": .string("value")])
         let data = try JSONEncoder().encode(params)

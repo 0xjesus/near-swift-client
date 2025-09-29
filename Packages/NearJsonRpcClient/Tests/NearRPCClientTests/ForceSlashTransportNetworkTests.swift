@@ -1,11 +1,12 @@
-import XCTest
 @testable import NearJsonRpcClient
+import XCTest
 
 final class ForceSlashTransportNetworkTests: XCTestCase {
     override class func setUp() {
         super.setUp()
         URLProtocol.registerClass(URLProtocolMock.self)
     }
+
     override class func tearDown() {
         URLProtocol.unregisterClass(URLProtocolMock.self)
         super.tearDown()
@@ -23,7 +24,7 @@ final class ForceSlashTransportNetworkTests: XCTestCase {
             XCTAssertEqual(req.httpMethod, "POST")
             XCTAssertEqual(req.value(forHTTPHeaderField: "Content-Type"), "application/json")
             XCTAssertEqual(req.value(forHTTPHeaderField: "Accept"), "application/json")
-            let ok = HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type":"application/json"])!
+            let ok = HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
             return (ok, Data(#"{"jsonrpc":"2.0","id":1,"result":"ok"}"#.utf8))
         }
 

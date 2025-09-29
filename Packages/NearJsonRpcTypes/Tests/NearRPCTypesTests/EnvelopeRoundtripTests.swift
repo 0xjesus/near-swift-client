@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class EnvelopeRoundtripTests: XCTestCase {
-
     func testRequestEnvelopeEncode() throws {
         // Intentamos usar el tipo si está accesible y no es genérico:
         // Si tu RPCRequestEnvelope es genérico, comenta este bloque y usa el bloque JSON de fallback.
@@ -24,7 +23,7 @@ final class EnvelopeRoundtripTests: XCTestCase {
                 "jsonrpc": "2.0",
                 "id": 1,
                 "method": "gas_price",
-                "params": [:] as [String: Any]
+                "params": [:] as [String: Any],
             ]
             let data = try JSONSerialization.data(withJSONObject: dict, options: [])
             let json = try XCTUnwrap(String(data: data, encoding: .utf8))

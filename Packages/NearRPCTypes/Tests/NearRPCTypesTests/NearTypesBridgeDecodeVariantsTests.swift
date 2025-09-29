@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class NearTypesBridgeDecodeVariantsTests: XCTestCase {
-
     func testViewAccountResult_locked_variants_decode() throws {
         // locked (moderno)
         let v1 = try JSONDecoder().decode(ViewAccountResult.self, from: Data(#"{ "amount":"1", "locked":"2" }"#.utf8))

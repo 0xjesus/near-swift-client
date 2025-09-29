@@ -1,11 +1,10 @@
-import XCTest
 import Foundation
 import NearJsonRpcClient
 import NearJsonRpcTypes
+import XCTest
 
 /// Optional integration test that only runs when NEAR_RPC_URL is present.
 final class IntegrationOptInTests: XCTestCase {
-
     func testClientInitIfOptIn() throws {
         guard
             let s = ProcessInfo.processInfo.environment["NEAR_RPC_URL"],

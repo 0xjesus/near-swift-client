@@ -1,5 +1,5 @@
-import XCTest
 @testable import NearJsonRpcClient
+import XCTest
 
 final class ConfigDefaultsTests: XCTestCase {
     func testDefaultHeadersAndTimeout() {

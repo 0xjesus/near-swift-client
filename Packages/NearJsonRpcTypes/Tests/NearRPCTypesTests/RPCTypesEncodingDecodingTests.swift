@@ -1,10 +1,9 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class RPCTypesEncodingDecodingTests: XCTestCase {
-
     private func decodeDict(_ data: Data) throws -> [String: Any] {
-        try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
     func testAccount_decodeLocked_then_encodeSnakeCase() throws {
@@ -20,7 +19,7 @@ final class RPCTypesEncodingDecodingTests: XCTestCase {
         }
         """.data(using: .utf8)!
         let acc = try JSONDecoder().decode(Account.self, from: json)
-        let obj = try decodeDict(try JSONEncoder().encode(acc))
+        let obj = try decodeDict(JSONEncoder().encode(acc))
         XCTAssertEqual(obj["amount"] as? String, "10")
         XCTAssertEqual(obj["locked_amount"] as? String, "5")
         XCTAssertEqual(obj["code_hash"] as? String, "h")
@@ -38,7 +37,7 @@ final class RPCTypesEncodingDecodingTests: XCTestCase {
         }
         """.data(using: .utf8)!
         let acc = try JSONDecoder().decode(Account.self, from: json)
-        let obj = try decodeDict(try JSONEncoder().encode(acc))
+        let obj = try decodeDict(JSONEncoder().encode(acc))
         XCTAssertEqual(obj["locked_amount"] as? String, "0")
     }
 
@@ -56,7 +55,7 @@ final class RPCTypesEncodingDecodingTests: XCTestCase {
             challengesRoot: "cr"
         )
         // encode → snake_case
-        let obj = try decodeDict(try JSONEncoder().encode(header))
+        let obj = try decodeDict(JSONEncoder().encode(header))
         XCTAssertNotNil(obj["epoch_id"])
         XCTAssertNotNil(obj["prev_state_root"])
         XCTAssertNil(obj["epochId"])
@@ -83,7 +82,7 @@ final class RPCTypesEncodingDecodingTests: XCTestCase {
         XCTAssertEqual(h.chunkHash, "ch")
         XCTAssertEqual(h.prevBlockHash, "pbh")
 
-        let obj = try decodeDict(try JSONEncoder().encode(h))
+        let obj = try decodeDict(JSONEncoder().encode(h))
         XCTAssertNotNil(obj["chunk_hash"])
         XCTAssertNotNil(obj["prev_block_hash"])
         XCTAssertNil(obj["prevBlockHash"])
@@ -91,7 +90,7 @@ final class RPCTypesEncodingDecodingTests: XCTestCase {
 
     func testJSONRPCError_encode_decode() throws {
         let e = JSONRPCError(code: -1, message: "m", data: AnyCodable("d"))
-        let back = try JSONDecoder().decode(JSONRPCError.self, from: try JSONEncoder().encode(e))
+        let back = try JSONDecoder().decode(JSONRPCError.self, from: JSONEncoder().encode(e))
         XCTAssertEqual(back.code, -1)
         XCTAssertEqual(back.message, "m")
     }

@@ -1,13 +1,12 @@
-import XCTest
 @testable import NearJsonRpcClient
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class SendCoreTests: XCTestCase {
-
     // Crea una sesión que fuerza a usar URLProtocolMock sólo para este test
     private func makeClient(base: URL) -> NearJsonRpcClient {
         let cfg = URLSessionConfiguration.ephemeral
-        cfg.protocolClasses = [URLProtocolMock.self]      // <- aquí enchufamos el mock
+        cfg.protocolClasses = [URLProtocolMock.self] // <- aquí enchufamos el mock
         let session = URLSession(configuration: cfg)
         return NearJsonRpcClient(.init(endpoint: base), session: session)
     }
@@ -27,7 +26,7 @@ final class SendCoreTests: XCTestCase {
             }}
             """.data(using: .utf8)!
             let resp = HTTPURLResponse(url: req.url!, statusCode: 200,
-                                       httpVersion: nil, headerFields: ["Content-Type":"application/json"])!
+                                       httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
             return (resp, ok)
         }
         defer { URLProtocolMock.handler = nil }
@@ -49,7 +48,7 @@ final class SendCoreTests: XCTestCase {
             {"jsonrpc":"2.0","id":"1","error":{"code":-32000,"message":"boom"}}
             """.data(using: .utf8)!
             let resp = HTTPURLResponse(url: req.url!, statusCode: 200,
-                                       httpVersion: nil, headerFields: ["Content-Type":"application/json"])!
+                                       httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
             return (resp, err)
         }
         defer { URLProtocolMock.handler = nil }
@@ -59,14 +58,14 @@ final class SendCoreTests: XCTestCase {
 
         let params = ViewAccountParams(accountId: "alice.testnet")
 
-        await XCTAssertAsyncThrowsError({
+        await XCTAssertAsyncThrowsError {
             try await client.rawCall(method: "query", params: params, decode: Account.self)
-        })
+        }
     }
 
     // Helper async para asserts de errores en funciones async
-    func XCTAssertAsyncThrowsError<T>(
-        _ expression: @escaping () async throws -> T,
+    func XCTAssertAsyncThrowsError(
+        _ expression: @escaping () async throws -> some Any,
         _ message: @autoclosure () -> String = "",
         file: StaticString = #filePath, line: UInt = #line,
         _ errorHandler: (Error) -> Void = { _ in }

@@ -3,18 +3,20 @@ import Foundation
 public typealias BlockView = Block
 
 // --- helper local para decodificar con varias claves ---
-fileprivate struct _NK: CodingKey {
-    var stringValue: String; init?(stringValue: String){ self.stringValue = stringValue }
-    var intValue: Int? { nil }; init?(intValue: Int) { return nil }
+private struct _NK: CodingKey {
+    var stringValue: String; init?(stringValue: String) { self.stringValue = stringValue }
+    var intValue: Int? { nil }; init?(intValue _: Int) { nil }
 }
-fileprivate extension KeyedDecodingContainer where Key == _NK {
-    func decodeIfPresent<T: Decodable>(_ type: T.Type, anyOf keys: [String]) throws -> T? {
+
+private extension KeyedDecodingContainer where Key == _NK {
+    func decodeIfPresent<T: Decodable>(_: T.Type, anyOf keys: [String]) throws -> T? {
         for k in keys {
             if let kk = _NK(stringValue: k), let v = try decodeIfPresent(T.self, forKey: kk) { return v }
         }
         return nil
     }
 }
+
 // -------------------------------------------------------
 
 // ViewAccountResult ligero y tolerante (lo usan los wrappers del cliente)
@@ -33,10 +35,10 @@ public struct ViewAccountResult: Codable, Equatable {
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: _NK.self)
-        self.amount        = try c.decodeIfPresent(U128.self,   anyOf: ["amount"])
-        self.locked        = try c.decodeIfPresent(U128.self,   anyOf: ["locked", "locked_amount", "lockedAmount"])
-        self.storagePaidAt = try c.decodeIfPresent(UInt64.self, anyOf: ["storage_paid_at", "storagePaidAt"])
-        self.storageUsage  = try c.decodeIfPresent(UInt64.self, anyOf: ["storage_usage", "storageUsage"])
+        amount = try c.decodeIfPresent(U128.self, anyOf: ["amount"])
+        locked = try c.decodeIfPresent(U128.self, anyOf: ["locked", "locked_amount", "lockedAmount"])
+        storagePaidAt = try c.decodeIfPresent(UInt64.self, anyOf: ["storage_paid_at", "storagePaidAt"])
+        storageUsage = try c.decodeIfPresent(UInt64.self, anyOf: ["storage_usage", "storageUsage"])
     }
 }
 
@@ -63,6 +65,7 @@ public struct AccessKeyInfo: Codable, Equatable {
     public let publicKey: PublicKey
     public let accessKey: AccessKey
 }
+
 public typealias ViewAccessKeyResult = AccessKey
 
 public struct ViewAccessKeyListResult: Codable, Equatable {

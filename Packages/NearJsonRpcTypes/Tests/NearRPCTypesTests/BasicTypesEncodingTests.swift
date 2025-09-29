@@ -1,5 +1,5 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class BasicTypesEncodingTests: XCTestCase {
     func testU128Roundtrip() throws {

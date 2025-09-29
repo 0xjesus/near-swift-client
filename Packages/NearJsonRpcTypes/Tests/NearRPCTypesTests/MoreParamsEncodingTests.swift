@@ -1,10 +1,10 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class MoreParamsEncodingTests: XCTestCase {
-    private func encodeToString<T: Encodable>(_ v: T) throws -> String {
+    private func encodeToString(_ v: some Encodable) throws -> String {
         let enc = JSONEncoder(); enc.keyEncodingStrategy = .convertToSnakeCase
-        return String(data: try enc.encode(v), encoding: .utf8)!
+        return try String(data: enc.encode(v), encoding: .utf8)!
     }
 
     func testBlockParamsEncode() throws {
@@ -49,7 +49,7 @@ final class MoreParamsEncodingTests: XCTestCase {
     }
 
     func testChangesAccountParamsEncode() throws {
-        let s = try encodeToString(ChangesAccountParams(accountIds: ["a","b"]))
+        let s = try encodeToString(ChangesAccountParams(accountIds: ["a", "b"]))
         XCTAssertTrue(s.contains("\"changes_type\":\"account_changes\""))
         XCTAssertTrue(s.contains("\"account_ids\":[\"a\",\"b\"]"))
     }

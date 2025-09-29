@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class CompatShapesTests: XCTestCase {
-
     func testAccount_decode_locked_amount_locked_lockedAmount() throws {
         let snake = #"""
         {"amount":"1","locked_amount":"2","code_hash":"h","storage_usage":1,"storage_paid_at":10,"block_height":100,"block_hash":"bh"}

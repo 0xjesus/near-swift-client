@@ -1,5 +1,5 @@
-import XCTest
 @testable import NearJsonRpcClient
+import XCTest
 
 final class URLProtocolMockCoverageTests: XCTestCase {
     func testStatics_do_not_crash() {

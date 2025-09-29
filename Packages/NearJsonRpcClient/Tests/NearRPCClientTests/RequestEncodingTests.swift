@@ -1,11 +1,10 @@
-import XCTest
 @testable import NearJsonRpcClient
+import XCTest
 
 /// Tests around the ForceSlashTransport testing helper:
 /// - ensures POST "/"
 /// - ensures JSON headers are merged/set
 final class RequestEncodingTests: XCTestCase {
-
     func testDefaultHeadersAndSlashPath() throws {
         let base = URL(string: "https://rpc.testnet.near.org/some/path")!
         let transport = ForceSlashTransport(baseURL: base)
@@ -28,7 +27,7 @@ final class RequestEncodingTests: XCTestCase {
         let body = Data("{}".utf8)
         let custom = [
             "Content-Type": "application/json; charset=utf-8",
-            "Accept": "application/json, text/plain"
+            "Accept": "application/json, text/plain",
         ]
         let (_, req) = try transport.makeURLRequest(path: "/ignored", body: body, headers: custom)
 

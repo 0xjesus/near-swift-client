@@ -1,8 +1,7 @@
-import XCTest
 import NearJsonRpcTypes
+import XCTest
 
 final class CaseConversionDeepTests: XCTestCase {
-
     struct Inner: Codable, Equatable {
         let publicKeyBase58: String
         let blockHash: String
@@ -20,7 +19,7 @@ final class CaseConversionDeepTests: XCTestCase {
             signerId: "alice.near",
             actions: [
                 Inner(publicKeyBase58: "ed25519:ABC", blockHash: "HASH123", gasBurnt: 42),
-                Inner(publicKeyBase58: "ed25519:DEF", blockHash: "HASH456", gasBurnt: 7)
+                Inner(publicKeyBase58: "ed25519:DEF", blockHash: "HASH456", gasBurnt: 7),
             ],
             receiptIds: ["r1", "r2"]
         )

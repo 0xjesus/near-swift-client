@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class NearTypesMoreCoverageTests: XCTestCase {
-
     func testBlockHeaderEncodeSnakeCase() throws {
         // Tu BlockHeader tiene init(memberwise) y encode con claves snake_case
         let h = BlockHeader(
@@ -24,7 +23,7 @@ final class NearTypesMoreCoverageTests: XCTestCase {
         XCTAssertEqual(obj["epoch_id"] as? String, "e")
         XCTAssertEqual(obj["prev_hash"] as? String, "ph")
         XCTAssertEqual(obj["prev_state_root"] as? String, "psr")
-        XCTAssertNotNil(obj["timestamp"])               // evitar cast exacto por bridging NSNumber
+        XCTAssertNotNil(obj["timestamp"]) // evitar cast exacto por bridging NSNumber
         XCTAssertEqual(obj["timestamp_nanosec"] as? String, "123000000")
         XCTAssertEqual(obj["random_value"] as? String, "rv")
         XCTAssertEqual(obj["gas_price"] as? String, "1")

@@ -1,10 +1,9 @@
-import XCTest
 import NearJsonRpcTypes
+import XCTest
 
 /// Decoding samples to exercise snake_case → camelCase across nested structures.
 /// These are minimal fixtures (not full protocol responses) to keep the test robust.
 final class DecodingFixturesTests: XCTestCase {
-
     struct BlockHeader: Codable, Equatable {
         let height: Int
         let epochId: String
@@ -33,7 +32,7 @@ final class DecodingFixturesTests: XCTestCase {
 
         let blk = try decoder.decode(Block.self, from: json)
         XCTAssertEqual(blk.author, "node.pool.near")
-        XCTAssertEqual(blk.header.height, 123456)
+        XCTAssertEqual(blk.header.height, 123_456)
         XCTAssertEqual(blk.header.epochId, "9hJm...abc")
         XCTAssertEqual(blk.header.hash, "6N5L...xyz")
     }

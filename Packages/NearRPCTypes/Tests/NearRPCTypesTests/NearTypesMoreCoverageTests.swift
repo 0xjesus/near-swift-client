@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class NearTypesMoreCoverageTests: XCTestCase {
-
     func testBlockHeaderEncodeSnakeCase() throws {
         let h = BlockHeader(
             height: 1,

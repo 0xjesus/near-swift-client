@@ -1,6 +1,7 @@
 import Foundation
 
 // MARK: - Basic NEAR Types
+
 public typealias AccountId = String
 public typealias PublicKey = String
 public typealias BlockHeight = UInt64
@@ -12,18 +13,19 @@ public typealias Base64String = String
 public typealias Base58String = String
 
 // MARK: - U128 Type
+
 public struct U128: Codable, Equatable {
     public let value: String
-    
+
     public init(_ value: String) {
         self.value = value
     }
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        self.value = try container.decode(String.self)
+        value = try container.decode(String.self)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(value)
@@ -31,24 +33,26 @@ public struct U128: Codable, Equatable {
 }
 
 // MARK: - U64 Type
+
 public struct U64: Codable, Equatable {
     public let value: String
-    
+
     public init(_ value: String) {
         self.value = value
     }
 }
 
 // MARK: - Block Reference
+
 public enum BlockReference: Codable, Equatable {
     case blockId(BlockId)
     case finality(Finality)
-    
+
     public enum Finality: String, Codable {
         case final
         case optimistic
     }
-    
+
     public enum BlockId: Codable, Equatable {
         case height(BlockHeight)
         case hash(Hash)
@@ -56,6 +60,7 @@ public enum BlockReference: Codable, Equatable {
 }
 
 // MARK: - Action Types
+
 public enum Action: Codable, Equatable {
     case createAccount
     case deployContract(DeployContractAction)
@@ -101,10 +106,11 @@ public struct DeleteAccountAction: Codable, Equatable {
 }
 
 // MARK: - Access Key
+
 public struct AccessKey: Codable, Equatable {
     public let nonce: Nonce
     public let permission: Permission
-    
+
     public enum Permission: Codable, Equatable {
         case fullAccess
         case functionCall(FunctionCallPermission)

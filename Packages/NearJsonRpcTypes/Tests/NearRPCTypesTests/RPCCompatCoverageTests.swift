@@ -1,14 +1,13 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class RPCCompatCoverageTests: XCTestCase {
-
     func testRPCLiteral_object_array_roundtrip() throws {
         let lit: RPCLiteral = .object([
             "s": .string("a"),
             "b": .bool(true),
             "d": .double(1.5),
-            "a": .array([.string("x"), .null])
+            "a": .array([.string("x"), .null]),
         ])
         let data = try JSONEncoder().encode(lit)
         let back = try JSONDecoder().decode(RPCLiteral.self, from: data)
@@ -18,7 +17,7 @@ final class RPCCompatCoverageTests: XCTestCase {
     func testRPCParams_encode_object_and_array() throws {
         let p1: RPCParams = .object(["x": .string("y")])
         let d1 = try JSONEncoder().encode(p1)
-        let o1 = try JSONSerialization.jsonObject(with: d1) as! [String:Any]
+        let o1 = try JSONSerialization.jsonObject(with: d1) as! [String: Any]
         XCTAssertEqual(o1["x"] as? String, "y")
 
         let p2: RPCParams = .array([.string("a"), .null, .bool(false)])
@@ -44,11 +43,11 @@ final class RPCCompatCoverageTests: XCTestCase {
                                      method: "m",
                                      params: .object(["p": .string("v")]))
         let data = try JSONEncoder().encode(env)
-        let obj = try JSONSerialization.jsonObject(with: data) as! [String:Any]
+        let obj = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         XCTAssertEqual(obj["jsonrpc"] as? String, "2.0")
         XCTAssertEqual(obj["method"] as? String, "m")
         XCTAssertEqual(obj["id"] as? String, "1")
-        let params = obj["params"] as! [String:Any]
+        let params = obj["params"] as! [String: Any]
         XCTAssertEqual(params["p"] as? String, "v")
     }
 
@@ -59,7 +58,7 @@ final class RPCCompatCoverageTests: XCTestCase {
                                      result: .object(["x": .string("v")]),
                                      error: nil)
         switch ok.result {
-        case .success(let v):
+        case let .success(v):
             if case let .object(o) = v {
                 XCTAssertEqual(o["x"], .some(.string("v")))
             } else {
@@ -78,7 +77,7 @@ final class RPCCompatCoverageTests: XCTestCase {
         switch ko.result {
         case .success:
             XCTFail("esperaba error")
-        case .failure(let e):
+        case let .failure(e):
             XCTAssertEqual(e.code, -32000)
             XCTAssertEqual(e.message, "oops")
         }

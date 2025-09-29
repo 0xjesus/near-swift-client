@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "NearJsonRpcClient", targets: ["NearJsonRpcClient"]),
     ],
     dependencies: [
-                .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.3.0"),
     ],
     targets: [
         .target(
@@ -28,7 +28,7 @@ let package = Package(
         ),
         .testTarget(
             name: "NearJsonRpcClientTests",
-            dependencies: ["NearJsonRpcClient","NearJsonRpcTypes"],
+            dependencies: ["NearJsonRpcClient", "NearJsonRpcTypes"],
             path: "Packages/NearJsonRpcClient/Tests"
         ),
     ]

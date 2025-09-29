@@ -1,10 +1,11 @@
-import XCTest
 @testable import NearJsonRpcClient
 @testable import NearJsonRpcTypes
+import XCTest
+
 // Helper global para asserts async (accesible desde cualquier test file de este target)
 @inline(__always)
-func XCTAssertAsyncThrowsError<T>(
-    _ expression: @escaping () async throws -> T,
+func XCTAssertAsyncThrowsError(
+    _ expression: @escaping () async throws -> some Any,
     _ message: @autoclosure () -> String = "",
     file: StaticString = #filePath, line: UInt = #line,
     _ errorHandler: (Error) -> Void = { _ in }
@@ -16,6 +17,7 @@ func XCTAssertAsyncThrowsError<T>(
         errorHandler(error)
     }
 }
+
 /// Envelope simple para simular respuestas JSON-RPC 2.0
 private struct Out<R: Encodable>: Encodable {
     let jsonrpc = "2.0"
@@ -24,11 +26,11 @@ private struct Out<R: Encodable>: Encodable {
 }
 
 final class ClientWrappersFullCoverageTests: XCTestCase {
-
     override class func setUp() {
         super.setUp()
         URLProtocol.registerClass(URLProtocolMock.self)
     }
+
     override class func tearDown() {
         URLProtocol.unregisterClass(URLProtocolMock.self)
         super.tearDown()
@@ -47,7 +49,7 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
         XCTAssertEqual(req.value(forHTTPHeaderField: "Content-Type"), "application/json")
         XCTAssertEqual(req.value(forHTTPHeaderField: "Accept"), "application/json")
         let resp = HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil,
-                                   headerFields: ["Content-Type":"application/json"])!
+                                   headerFields: ["Content-Type": "application/json"])!
         return (resp, body)
     }
 
@@ -78,7 +80,7 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
                     shardId: 0,
                     gasUsed: 0,
                     gasLimit: 0
-                )
+                ),
             ]
         )
         URLProtocolMock.handler = { req in
@@ -98,7 +100,8 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
         // 3) validators (.current)
         URLProtocolMock.handler = { req in
             let body = try JSONEncoder().encode(Out(result: EpochValidatorInfo(
-                currentValidators: nil, nextValidators: nil, currentProposals: nil, epochStartHeight: nil)))
+                currentValidators: nil, nextValidators: nil, currentProposals: nil, epochStartHeight: nil
+            )))
             return self.ok(req, body: body)
         }
         _ = try await client.validators(.current)
@@ -106,7 +109,8 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
         // 3b) validators (.byEpochId) para cubrir la otra rama de encoding
         URLProtocolMock.handler = { req in
             let body = try JSONEncoder().encode(Out(result: EpochValidatorInfo(
-                currentValidators: nil, nextValidators: nil, currentProposals: nil, epochStartHeight: nil)))
+                currentValidators: nil, nextValidators: nil, currentProposals: nil, epochStartHeight: nil
+            )))
             return self.ok(req, body: body)
         }
         _ = try await client.validators(.byEpochId("ep-1"))
@@ -226,18 +230,18 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
             let resp = HTTPURLResponse(url: req.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!
             return (resp, Data("{}".utf8))
         }
-        await XCTAssertAsyncThrowsError({
+        await XCTAssertAsyncThrowsError {
             _ = try await client.viewState(.init(accountId: "a", finality: .final, prefixBase64: "")) as ViewStateResult
-        })
+        }
 
         // { "result": null } sin "error" → cannotParseResponse
         URLProtocolMock.handler = { req in
             let body = Data(#"{"jsonrpc":"2.0","id":"1","result":null}"#.utf8)
-            let resp = HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type":"application/json"])!
+            let resp = HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
             return (resp, body)
         }
-        await XCTAssertAsyncThrowsError({
+        await XCTAssertAsyncThrowsError {
             _ = try await client.getGenesisConfig() as GenesisConfig
-        })
+        }
     }
 }

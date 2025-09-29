@@ -22,6 +22,7 @@ public struct ValidatorsParams: Encodable {
     public init(epochId: String? = nil, blockId: JSONValue? = nil) {
         self.epochId = epochId; self.blockId = blockId
     }
+
     public static let current = ValidatorsParams()
 }
 

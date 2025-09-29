@@ -1,8 +1,7 @@
-import XCTest
 @testable import NearJsonRpcTypes
+import XCTest
 
 final class NearTypesBridgeCoverageTests: XCTestCase {
-
     func testViewAccountResult_variants_decode_and_reencode() throws {
         // locked_amount (legacy) + otros campos
         let json = #"{ "amount":"10", "locked_amount":"7", "storage_paid_at":1, "storage_usage":2 }"#

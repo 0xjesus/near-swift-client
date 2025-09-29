@@ -1,10 +1,9 @@
-import XCTest
 import NearJsonRpcTypes
+import XCTest
 
 /// Minimal JSON-RPC error envelope decoding to validate error shape.
 /// This test is intentionally module-agnostic and does not depend on internal types.
 final class RPCEnvelopeErrorTests: XCTestCase {
-
     // Simple union to handle both string and numeric ids in JSON-RPC
     enum RPCId: Codable, Equatable {
         case string(String)
@@ -23,8 +22,8 @@ final class RPCEnvelopeErrorTests: XCTestCase {
         func encode(to encoder: Encoder) throws {
             var c = encoder.singleValueContainer()
             switch self {
-            case .int(let i): try c.encode(i)
-            case .string(let s): try c.encode(s)
+            case let .int(i): try c.encode(i)
+            case let .string(s): try c.encode(s)
             }
         }
     }

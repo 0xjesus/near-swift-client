@@ -7,7 +7,7 @@ let package = Package(
         .macOS(.v12),
         .iOS(.v15),
         .watchOS(.v8),
-        .tvOS(.v15)
+        .tvOS(.v15),
     ],
     products: [
         .library(name: "NearJsonRpcTypes", targets: ["NearJsonRpcTypes"]),
