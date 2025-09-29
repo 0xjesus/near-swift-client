@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           rm -rf docs
 
-          # Genera sitio DocC estático con base path del repo
+          # Generate DocC site
           swift package --allow-writing-to-directory docs \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -47,42 +47,51 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
 
-          echo "== Tree tras generar =="
+          echo "== Tree after generate =="
           (cd docs && find . -maxdepth 3 -print | sort)
 
-          # Aplana si DocC dejó todo bajo docs/NearJsonRpcClient/
+          # Flatten if DocC nested under module dir
           if [[ -d docs/NearJsonRpcClient && -d docs/NearJsonRpcClient/data ]]; then
             echo "Flattening NearJsonRpcClient/ -> docs/"
             rsync -a "docs/NearJsonRpcClient/" "docs/"
             rm -rf "docs/NearJsonRpcClient"
           fi
 
-          # Fallbacks: crea índices si faltan
+          # Ensure 'data' root exists
           mkdir -p docs/data docs/data/documentation
 
+          # Fallbacks (create only if missing)
+
+          # 1) documentation.json (index)
           if [[ ! -f docs/data/documentation.json ]]; then
             MOD_JSON=$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)
             if [[ -n "${MOD_JSON:-}" ]]; then
-              echo "Patching: ${MOD_JSON} -> docs/data/documentation.json"
               cp "${MOD_JSON}" docs/data/documentation.json
             fi
           fi
 
+          # 2) linkable-entities.json (MUST NOT BE EMPTY)
           if [[ ! -f docs/data/linkable-entities.json ]]; then
-            echo "Patching: creating docs/data/linkable-entities.json"
-            # Vacío es suficiente para que el viewer no truene; navegación avanzada puede faltar
-            printf '{}' > docs/data/linkable-entities.json
+            cat > docs/data/linkable-entities.json <<'JSON'
+{"interfaceLanguages":{"swift":{"symbols":[],"relationships":[],"overviews":[]}}}
+JSON
           fi
 
-          # Evita que GitHub Pages/Jekyll rompa assets DocC
+          # 3) Minimal search index so the viewer doesn't fail silently
+          if [[ ! -f docs/index/index.json ]]; then
+            mkdir -p docs/index
+            printf '{"records":[]}' > docs/index/index.json
+          fi
+
+          # Avoid Jekyll stripping DocC assets
           touch docs/.nojekyll
 
-          # Sanity checks (fallan el job si algo clave no está)
+          # Sanity checks
           test -f docs/index.html
           test -f docs/data/documentation.json
           test -f docs/data/linkable-entities.json
 
-          echo "== Tree final a publicar =="
+          echo "== Final tree to publish =="
           (cd docs && find . -maxdepth 3 -print | sort)
 
       - name: Upload artifact
