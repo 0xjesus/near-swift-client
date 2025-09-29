@@ -33,13 +33,13 @@ jobs:
 
       - name: Generate DocC static site (NearJsonRpcClient)
         env:
-          # usa el nombre del repo como base path: https://<user>.github.io/<repo>/
           BASE_PATH: ${{ github.event.repository.name }}
+        shell: bash
         run: |
           set -euo pipefail
           rm -rf docs
 
-          # Genera sitio estático DocC
+          # Genera sitio DocC estático con base path del repo
           swift package --allow-writing-to-directory docs \
             generate-documentation \
             --target NearJsonRpcClient \
@@ -47,22 +47,21 @@ jobs:
             --transform-for-static-hosting \
             --hosting-base-path "${BASE_PATH}"
 
-          echo "== After generation =="
-          (cd docs && find . -maxdepth 3 -print)
+          echo "== Tree tras generar =="
+          (cd docs && find . -maxdepth 3 -print | sort)
 
-          # Si DocC deja todo bajo docs/NearJsonRpcClient/, aplánalo
+          # Aplana si DocC dejó todo bajo docs/NearJsonRpcClient/
           if [[ -d docs/NearJsonRpcClient && -d docs/NearJsonRpcClient/data ]]; then
-            echo "Flattening NearJsonRpcClient/ into docs/"
+            echo "Flattening NearJsonRpcClient/ -> docs/"
             rsync -a "docs/NearJsonRpcClient/" "docs/"
             rm -rf "docs/NearJsonRpcClient"
           fi
 
-          echo "== Final docs tree =="
-          (cd docs && find . -maxdepth 3 -print)
+          # Fallbacks: crea índices si faltan
+          mkdir -p docs/data docs/data/documentation
 
-          # Fallbacks: crea los índices si no existen donde el viewer los espera
           if [[ ! -f docs/data/documentation.json ]]; then
-            MOD_JSON=$(find docs/data/documentation -maxdepth 1 -name "*.json" | head -n1 || true)
+            MOD_JSON=$(ls docs/data/documentation/*.json 2>/dev/null | head -n1 || true)
             if [[ -n "${MOD_JSON:-}" ]]; then
               echo "Patching: ${MOD_JSON} -> docs/data/documentation.json"
               cp "${MOD_JSON}" docs/data/documentation.json
@@ -70,16 +69,21 @@ jobs:
           fi
 
           if [[ ! -f docs/data/linkable-entities.json ]]; then
-            echo "Patching: creating empty docs/data/linkable-entities.json"
-            echo '{}' > docs/data/linkable-entities.json
+            echo "Patching: creating docs/data/linkable-entities.json"
+            # Vacío es suficiente para que el viewer no truene; navegación avanzada puede faltar
+            printf '{}' > docs/data/linkable-entities.json
           fi
 
-          # Evita que Jekyll bloquee assets DocC
+          # Evita que GitHub Pages/Jekyll rompa assets DocC
           touch docs/.nojekyll
 
-          # Sanity checks
+          # Sanity checks (fallan el job si algo clave no está)
           test -f docs/index.html
           test -f docs/data/documentation.json
+          test -f docs/data/linkable-entities.json
+
+          echo "== Tree final a publicar =="
+          (cd docs && find . -maxdepth 3 -print | sort)
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
