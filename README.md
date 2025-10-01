@@ -1,4 +1,3 @@
-```markdown
 # NEAR Swift JSON-RPC Client
 
 [![CI](https://github.com/0xjesus/near-swift-client/actions/workflows/ci.yml/badge.svg)](https://github.com/0xjesus/near-swift-client/actions/workflows/ci.yml)
@@ -153,4 +152,3 @@ MIT - see [LICENSE](LICENSE)
 ## Acknowledgments
 
 This implementation follows patterns established by [near-jsonrpc-client-rs](https://github.com/near/near-jsonrpc-client-rs) and [near-api-js](https://github.com/near/near-api-js).
-```
