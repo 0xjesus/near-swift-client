@@ -4,10 +4,8 @@ import PackageDescription
 let package = Package(
     name: "near-swift-client",
     platforms: [
-        .macOS(.v12),
-        .iOS(.v15),
-        .tvOS(.v15),
-        .watchOS(.v8)
+        .macOS(.v13),
+        .iOS(.v16)
     ],
     products: [
         .library(name: "NearJsonRpcClient", targets: ["NearJsonRpcClient"]),
@@ -24,9 +22,7 @@ let package = Package(
             dependencies: [
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
             ],
-            path: "Packages/NearJsonRpcTypes/Sources/NearJsonRpcTypes",
-            // AÑADIR ESTA LÍNEA PARA ELIMINAR EL WARNING
-            exclude: ["openapi.yaml"]
+            path: "Packages/NearJsonRpcTypes/Sources/NearJsonRpcTypes"
         ),
         .target(
             name: "NearJsonRpcClient",
@@ -36,12 +32,8 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "HTTPTypesFoundation", package: "swift-http-types"),
             ],
-            path: "Packages/NearJsonRpcClient/Sources/NearJsonRpcClient",
-            // AÑADIR ESTA LÍNEA PARA ELIMINAR EL WARNING
-            exclude: ["openapi.yaml"]
+            path: "Packages/NearJsonRpcClient/Sources/NearJsonRpcClient"
         ),
-        
-        // --- Targets de Prueba ---
         .testTarget(
             name: "NearJsonRpcTypesTests",
             dependencies: ["NearJsonRpcTypes"],
@@ -49,7 +41,7 @@ let package = Package(
         ),
         .testTarget(
             name: "NearJsonRpcClientTests",
-            dependencies: ["NearJsonRpcClient"],
+            dependencies: ["NearJsonRpcClient", "NearJsonRpcTypes"],
             path: "Packages/NearJsonRpcClient/Tests/NearRPCClientTests"
         ),
     ]
