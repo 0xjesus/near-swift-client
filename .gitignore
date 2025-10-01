@@ -33,3 +33,6 @@ Packages/*/Sources/*/Generated/
 # Backups creados por scripts
 **/.backup/
 *.bak
+# Archivos generados por Swift OpenAPI Generator
+/Packages/NearJsonRpcTypes/Sources/NearJsonRpcTypes/Generated/
+/Packages/NearJsonRpcClient/Sources/NearJsonRpcClient/Generated/

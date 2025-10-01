@@ -8,13 +8,13 @@ final class MoreParamsEncodingTests: XCTestCase {
     }
 
     func testBlockParamsEncode() throws {
-        let s = try encodeToString(BlockParams(blockId: .string("abc"), finality: "final"))
+        let s = try encodeToString(BlockParams(blockId: .string("abc"), finality: .final))
         XCTAssertTrue(s.contains("\"block_id\":\"abc\""))
         XCTAssertTrue(s.contains("\"finality\":\"final\""))
     }
 
     func testChunkParamsEncode() throws {
-        let s = try encodeToString(ChunkParams(chunkId: "ch", blockId: .number(1)))
+        let s = try encodeToString(ChunkParams(chunkId: .string("ch"), blockId: .number(1)))
         XCTAssertTrue(s.contains("\"chunk_id\":\"ch\""))
         XCTAssertTrue(s.contains("\"block_id\":1"))
     }
@@ -55,7 +55,7 @@ final class MoreParamsEncodingTests: XCTestCase {
     }
 
     func testProtocolConfigParamsEncode() throws {
-        let s = try encodeToString(ProtocolConfigParams(finality: "final"))
+        let s = try encodeToString(ProtocolConfigParams(finality: .final))
         XCTAssertTrue(s.contains("\"finality\":\"final\""))
     }
 

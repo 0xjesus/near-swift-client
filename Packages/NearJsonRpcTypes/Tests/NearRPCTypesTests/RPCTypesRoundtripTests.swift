@@ -4,7 +4,7 @@ import XCTest
 final class RPCTypesRoundtripTests: XCTestCase {
     func testJSONRPCRequestEncode() throws {
         // request_type usa snake_case en JSON
-        let params = ViewAccountParams(accountId: "alice.testnet", finality: "optimistic", blockId: nil)
+        let params = ViewAccountParams(accountId: "alice.testnet", finality: .optimistic, blockId: nil)
 
         let enc = JSONEncoder()
         enc.keyEncodingStrategy = .convertToSnakeCase

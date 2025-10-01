@@ -35,7 +35,7 @@ final class SendCoreTests: XCTestCase {
         let client = makeClient(base: base)
 
         // Usa los params que tengas en NearJsonRpcTypes (String? o enum, según tu modelo real)
-        let params = ViewAccountParams(accountId: "alice.testnet", finality: "optimistic")
+        let params = ViewAccountParams(accountId: "alice.testnet", finality: .optimistic)
 
         let account: Account = try await client.rawCall(method: "query", params: params, decode: Account.self)
         XCTAssertEqual(account.amount, "1")

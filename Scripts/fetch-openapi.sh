@@ -1,28 +1,43 @@
 #!/usr/bin/env bash
-# Fetch NEAR OpenAPI/OpenRPC (single source, no fallbacks).
-# Writes the schema to Scripts/schemas/near-openapi.json
-
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SCHEMAS_DIR="${ROOT}/Scripts/schemas"
-OUT="${SCHEMAS_DIR}/near-openapi.json"
-TMP="$(mktemp -t near-openapi.XXXXXX.json)"
+SPEC_URL="https://raw.githubusercontent.com/near/nearcore/master/chain/jsonrpc/openapi/openapi.json"
 
-mkdir -p "${SCHEMAS_DIR}"
+TYPES_PKG_PATH="Packages/NearJsonRpcTypes"
+CLIENT_PKG_PATH="Packages/NearJsonRpcClient"
+SPEC_FILENAME="openapi.yaml"
 
-URL="https://raw.githubusercontent.com/near/nearcore/master/chain/jsonrpc/openapi/openapi.json"
+TYPES_SPEC_PATH="${TYPES_PKG_PATH}/Sources/NearJsonRpcTypes/${SPEC_FILENAME}"
+CLIENT_SPEC_PATH="${CLIENT_PKG_PATH}/Sources/NearJsonRpcClient/${SPEC_FILENAME}"
 
-echo "→ Downloading OpenAPI from:"
-echo "   ${URL}"
-curl -fsSL "${URL}" -o "${TMP}"
+echo "→ Downloading NEAR OpenAPI spec..."
+curl -fsSL "${SPEC_URL}" -o "${TYPES_SPEC_PATH}"
 
-if [[ ! -s "${TMP}" ]]; then
-  echo "❌ Downloaded file is empty. Aborting."
+if [[ ! -s "${TYPES_SPEC_PATH}" ]]; then
+  echo "❌ ERROR: Spec download failed (empty file)."
   exit 1
 fi
 
-mv "${TMP}" "${OUT}"
+echo "→ Copying spec to client package..."
+cp "${TYPES_SPEC_PATH}" "${CLIENT_SPEC_PATH}"
 
-# Nota: forzamos POST "/" de JSON‑RPC en el cliente (no parchamos el spec aquí).
-echo "OK: Wrote ${OUT} (size: $(wc -c < "${OUT}") bytes)"
+echo "→ Running Swift OpenAPI Generator directly..."
+
+# ✅ CORRECCIÓN CLAVE:
+# Generamos los 'types' (que incluye Schemas y Operations) con acceso 'public'.
+# Así, el otro paquete (NearJsonRpcClient) puede verlos y usarlos.
+swift run swift-openapi-generator generate \
+  "${TYPES_SPEC_PATH}" \
+  --mode types \
+  --access-modifier public \
+  --output-directory "${TYPES_PKG_PATH}/Sources/NearJsonRpcTypes/Generated"
+
+# El generador para el cliente se queda igual. Genera su código como 'internal'.
+swift run swift-openapi-generator generate \
+  "${CLIENT_SPEC_PATH}" \
+  --mode client \
+  --output-directory "${CLIENT_PKG_PATH}/Sources/NearJsonRpcClient/Generated" \
+  --additional-import NearJsonRpcTypes
+
+echo "✅ Code generation complete."
