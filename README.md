@@ -1,67 +1,41 @@
+```markdown
 # NEAR Swift JSON-RPC Client
 
 [![CI](https://github.com/0xjesus/near-swift-client/actions/workflows/ci.yml/badge.svg)](https://github.com/0xjesus/near-swift-client/actions/workflows/ci.yml)
-[![Coverage gate](https://github.com/0xjesus/near-swift-client/actions/workflows/coverage.yml/badge.svg)](https://github.com/0xjesus/near-swift-client/actions/workflows/coverage.yml)
-[![Docs](https://img.shields.io/badge/DocC-Online-blue)](https://0xjesus.github.io/near-swift-client/)
-[![Release Please](https://github.com/0xjesus/near-swift-client/actions/workflows/release-please.yml/badge.svg)](https://github.com/0xjesus/near-swift-client/actions/workflows/release-please.yml)
+[![Coverage](https://github.com/0xjesus/near-swift-client/actions/workflows/coverage.yml/badge.svg)](https://github.com/0xjesus/near-swift-client/actions/workflows/coverage.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Fully type-safe Swift client for NEAR JSON-RPC**, generated from the official OpenAPI spec and patched for JSON-RPC’s single `POST "/"` endpoint. Designed for mobile & server Swift with idiomatic APIs, strong types, and CI automation.
+Type-safe Swift client for NEAR Protocol JSON-RPC API, auto-generated from the official OpenAPI specification with 80%+ test coverage and full CI automation.
 
-**📚 Docs:** https://0xjesus.github.io/near-swift-client/
+## Features
 
----
+- **Type-safe**: All RPC methods and responses fully typed with Swift structs/enums
+- **Idiomatic Swift**: Automatic `snake_case` → `camelCase` conversion
+- **Modern async/await**: Built on URLSession with native Swift concurrency
+- **Two packages**: Lightweight types library + full-featured client
+- **80%+ test coverage**: Comprehensive unit and integration tests
+- **CI automation**: GitHub Actions for testing, coverage gates, and OpenAPI regeneration
 
 ## Packages
 
-This repository contains two SwiftPM packages:
+| Package | Description |
+|---------|-------------|
+| `NearJsonRpcTypes` | Type definitions and Codable serialization (no networking) |
+| `NearJsonRpcClient` | HTTP client with ergonomic wrappers for all RPC methods |
 
-- **`NearJsonRpcTypes`** – lightweight models & `Codable` serialization/deserialization (no HTTP).
-- **`NearJsonRpcClient`** – async/await HTTP client built on top of `NearJsonRpcTypes` with ergonomic wrappers.
+## Installation
 
-Key features:
-- Automatic `snake_case` ⇢ `camelCase` conversion.
-- Async/await, `URLSession` based.
-- Tolerant decoders for NEAR RPC nuances.
-- Thorough unit tests, mockable networking, and coverage gates.
+### Swift Package Manager
 
----
+Add to your `Package.swift`:
 
-## Installation (Swift Package Manager)
-
-**Xcode:** *File → Add Packages…* and use:
+```swift
+dependencies: [
+    .package(url: "https://github.com/0xjesus/near-swift-client.git", from: "0.1.1")
+]
 ```
 
-[https://github.com/0xjesus/near-swift-client](https://github.com/0xjesus/near-swift-client)
-
-````
-
-**Package.swift:**
-```swift
-// swift-tools-version: 5.9
-import PackageDescription
-
-let package = Package(
-    name: "MyApp",
-    platforms: [
-        .iOS(.v15), .macOS(.v12)
-    ],
-    dependencies: [
-        .package(url: "https://github.com/0xjesus/near-swift-client.git", from: "0.1.1")
-    ],
-    targets: [
-        .target(
-            name: "MyApp",
-            dependencies: [
-                .product(name: "NearJsonRpcTypes", package: "near-swift-client"),
-                .product(name: "NearJsonRpcClient", package: "near-swift-client")
-            ]
-        )
-    ]
-)
-````
-
----
+Or in Xcode: **File → Add Packages...** → paste repository URL.
 
 ## Quick Start
 
@@ -69,158 +43,114 @@ let package = Package(
 import NearJsonRpcClient
 import NearJsonRpcTypes
 
-// Create a client (testnet or mainnet endpoint)
-let client = NearJsonRpcClient(
-    .init(
-        endpoint: URL(string: "https://rpc.testnet.near.org")!,
-        timeout: 30,
-        headers: ["User-Agent": "NearSwiftClient/0.1"]
-    )
-)
+let client = NearJsonRpcClient(.init(
+    endpoint: URL(string: "https://rpc.testnet.near.org")!
+))
 
-Task {
-    do {
-        // Example: get the latest block
-        let block = try await client.block(.init(finality: .final))
-        print("Block height:", block.header?.height ?? 0)
+// Get latest block
+let block = try await client.block(.init(finality: .final))
+print("Block height:", block.header?.height ?? 0)
 
-        // Example: view an account (typed result)
-        let account = try await client.viewAccount(.init(
-            accountId: "account.rpc-examples.testnet",
-            finality: .final
-        ))
-        print("Account balance:", account.amount?.value ?? "0")
-    } catch {
-        print("RPC error:", error)
-    }
-}
+// Query account
+let account = try await client.viewAccount(.init(
+    accountId: "example.testnet",
+    finality: .final
+))
+print("Balance:", account.amount?.value ?? "0")
 ```
-
-> **JSON-RPC path patching:** The official OpenAPI lists unique paths per method, but NEAR’s server expects **`POST "/"`**. The generator/transport here forces `POST "/"` for all methods while keeping typed params/responses.
-
----
-
-## Documentation
-
-* **DocC (hosted):** [https://0xjesus.github.io/near-swift-client/](https://0xjesus.github.io/near-swift-client/)
-* **Build locally:**
-
-  ```bash
-  swift package --disable-sandbox generate-documentation \
-    --target NearJsonRpcClient \
-    --output-path docs \
-    --transform-for-static-hosting \
-    --hosting-base-path near-swift-client
-  open docs/index.html
-  ```
-
----
 
 ## Development
 
-### Build & Test
+### Build and Test
 
 ```bash
 swift build
 swift test --enable-code-coverage
 ```
 
-### Coverage gates (local)
+### Check Coverage
 
 ```bash
-# Overall coverage gate (default 80%)
-./Scripts/coverage-summary.sh 80
-
-# “Core” coverage gate: NearJsonRpcTypes + transport (ignores Generated/Scripts/Tests and the high-level client façade)
-./Scripts/coverage-core.sh 80
+./Scripts/coverage-summary.sh 80  # Requires ≥80% coverage
 ```
 
-### Integration tests (optional)
+### Integration Tests
 
-By default tests use mocks. To run against a real endpoint, set:
+By default, tests use mocks. To test against live RPC:
 
 ```bash
 export NEAR_RPC_URL="https://rpc.testnet.near.org"
 swift test
 ```
 
----
+## OpenAPI Code Generation
 
-## OpenAPI Regeneration
+Types and client methods are generated from [NEAR's official OpenAPI spec](https://github.com/near/nearcore/blob/master/chain/jsonrpc/openapi/openapi.json).
 
-The client and types are generated from the **official NEAR OpenAPI**:
-
-```
-https://github.com/near/nearcore/blob/master/chain/jsonrpc/openapi/openapi.json
-```
-
-**Locally:**
+### Regenerate Locally
 
 ```bash
-# 1) Fetch the spec and patch paths to JSON-RPC POST "/"
+# Fetch latest spec from nearcore repo
 bash Scripts/fetch-openapi.sh
 
-# 2) Regenerate Swift types + client wrappers (includes snake→camel conversion)
+# Generate Swift code
 swift Scripts/generate-from-openapi.swift
 
-# 3) Build & test
-swift build
+# Verify changes
 swift test --enable-code-coverage
 ```
 
-**CI Workflows:**
+### Automated Regeneration
 
-* **Regenerate from OpenAPI** (scheduled & manual): fetch latest spec, regenerate, run tests, and open a PR with changes if any.
-* **Manual Regenerate (OpenAPI)**: on-demand regeneration from the Actions tab.
+GitHub Actions automatically:
+- Fetches latest OpenAPI spec (nightly + on-demand)
+- Regenerates code if spec changed
+- Runs full test suite
+- Opens PR for review if changes detected
 
-> Requires repository Actions with **read & write** permissions and “Allow GitHub Actions to create and approve pull requests”.
+See [`.github/workflows/regen-openapi.yml`](.github/workflows/regen-openapi.yml)
 
----
+## CI/CD Workflows
 
-## CI/CD (GitHub Actions)
+| Workflow | Purpose |
+|----------|---------|
+| **Swift CI** | Build, test, generate coverage artifacts |
+| **Coverage Gate** | Enforce 80% minimum line coverage |
+| **Lint** | SwiftFormat style checking |
+| **Regenerate from OpenAPI** | Scheduled/manual code regeneration from spec |
+| **Release Please** | Automated releases via conventional commits |
 
-* **Swift CI** – build, test, coverage artifacts, and a hard gate (≥ 80%).
-* **Coverage (gate 80%)** – fast coverage check using `llvm-cov export`.
-* **Lint** – SwiftFormat in lint mode.
-* **Publish Docs (GitHub Pages)** – generates DocC and deploys to `gh-pages`.
-* **Regenerate from OpenAPI** – scheduled nightly and manual dispatch; opens PR when the spec changes.
-* **Manual Regenerate (OpenAPI)** – one-click regeneration for maintainers.
-* **Release Please** – conventional-commit based automated release PRs.
-* **semantic-pr** – enforces conventional PR titles.
+## Architecture
 
----
-
-## Examples
-
-See the `Examples/` folder for a command-line app, a quick-start sample, and a simple SwiftUI demo showing basic calls.
-
----
+The generator patches the OpenAPI spec to work with JSON-RPC:
+- **Problem**: OpenAPI spec defines unique paths per method (`/block`, `/status`, etc.)
+- **Reality**: NEAR's JSON-RPC server expects all requests at `POST /`
+- **Solution**: Transport layer forces `POST /` while preserving typed parameters
 
 ## Contributing
 
-1. Use **conventional commit** titles, e.g.:
+1. Use conventional commit format:
+   ```
+   feat(client): add new RPC method
+   fix(types): correct deserialization
+   ```
 
-   * `feat(client): add XYZ`
-   * `fix(types): correct U128 decode`
-2. Run locally:
-
+2. Ensure tests pass and coverage ≥80%:
    ```bash
-   swiftformat . --swiftversion 5.9   # mirrors CI lint
    swift test --enable-code-coverage
    ./Scripts/coverage-summary.sh 80
    ```
-3. For codegen changes:
 
+3. Format code:
    ```bash
-   bash Scripts/fetch-openapi.sh
-   swift Scripts/generate-from-openapi.swift
+   swiftformat . --swiftversion 5.9
    ```
-
-Issues and PRs are welcome!
-
----
 
 ## License
 
-**MIT** – see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE)
 
+## Acknowledgments
+
+This implementation follows patterns established by [near-jsonrpc-client-rs](https://github.com/near/near-jsonrpc-client-rs) and [near-api-js](https://github.com/near/near-api-js).
+```
