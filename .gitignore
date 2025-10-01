@@ -1,38 +1,40 @@
 # macOS
 .DS_Store
 
-# Swift
-.build/
-.swiftpm/
+# Xcode
 *.xcodeproj
 *.xcworkspace
+!default.xcworkspace
+xcuserdata/
+*.xccheckout
+*.moved-aside
 DerivedData/
-*.playground
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-# Package resolved
-Package.resolved
+# Swift Package Manager
+.build/
+.swiftpm/
 
-# Coverage
-*.lcov
-coverage/
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Code coverage
+*.profdata
+*.profraw
 .codecov/
 
 # IDE
-.idea/
 .vscode/
+.idea/
+
+# Temporary
+*.tmp
 *.swp
-*.swo
-
-# Testing
-test-results/
-*.xcresult
-
-# Generated
-Packages/*/Sources/*/Generated/
-
-# Backups creados por scripts
-**/.backup/
-*.bak
-# Archivos generados por Swift OpenAPI Generator
-/Packages/NearJsonRpcTypes/Sources/NearJsonRpcTypes/Generated/
-/Packages/NearJsonRpcClient/Sources/NearJsonRpcClient/Generated/
+*~
