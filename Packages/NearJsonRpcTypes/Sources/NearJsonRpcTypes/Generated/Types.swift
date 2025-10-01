@@ -17818,7 +17818,7 @@ public enum Components {
         @frozen public enum NonDelegateAction: Codable, Hashable, Sendable {
             /// Create an (sub)account using a transaction `receiver_id` as an ID for
             /// a new account ID must pass validation rules described here
-            /// <http://nomicon.io/Primitives/Account.html>.
+            /// <https://nomicon.io/DataStructures/Account>.
             ///
             /// - Remark: Generated from `#/components/schemas/NonDelegateAction/case1`.
             public struct Case1Payload: Codable, Hashable, Sendable {
@@ -17847,7 +17847,7 @@ public enum Components {
             }
             /// Create an (sub)account using a transaction `receiver_id` as an ID for
             /// a new account ID must pass validation rules described here
-            /// <http://nomicon.io/Primitives/Account.html>.
+            /// <https://nomicon.io/DataStructures/Account>.
             ///
             /// - Remark: Generated from `#/components/schemas/NonDelegateAction/case1`.
             case case1(Components.Schemas.NonDelegateAction.Case1Payload)
