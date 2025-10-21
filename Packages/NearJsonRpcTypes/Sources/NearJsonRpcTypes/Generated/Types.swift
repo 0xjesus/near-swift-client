@@ -6007,45 +6007,6 @@ public enum Components {
                 case validator_reward
             }
         }
-        /// Configuration for a cloud-based archival reader.
-        ///
-        /// - Remark: Generated from `#/components/schemas/CloudArchivalReaderConfig`.
-        public struct CloudArchivalReaderConfig: Codable, Hashable, Sendable {
-            /// Configures the external storage used by the archival node.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudArchivalReaderConfig/cloud_storage`.
-            public struct cloud_storagePayload: Codable, Hashable, Sendable {
-                /// - Remark: Generated from `#/components/schemas/CloudArchivalReaderConfig/cloud_storage/value1`.
-                public var value1: Components.Schemas.CloudStorageConfig
-                /// Creates a new `cloud_storagePayload`.
-                ///
-                /// - Parameters:
-                ///   - value1:
-                public init(value1: Components.Schemas.CloudStorageConfig) {
-                    self.value1 = value1
-                }
-                public init(from decoder: any Decoder) throws {
-                    self.value1 = try .init(from: decoder)
-                }
-                public func encode(to encoder: any Encoder) throws {
-                    try self.value1.encode(to: encoder)
-                }
-            }
-            /// Configures the external storage used by the archival node.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudArchivalReaderConfig/cloud_storage`.
-            public var cloud_storage: Components.Schemas.CloudArchivalReaderConfig.cloud_storagePayload
-            /// Creates a new `CloudArchivalReaderConfig`.
-            ///
-            /// - Parameters:
-            ///   - cloud_storage: Configures the external storage used by the archival node.
-            public init(cloud_storage: Components.Schemas.CloudArchivalReaderConfig.cloud_storagePayload) {
-                self.cloud_storage = cloud_storage
-            }
-            public enum CodingKeys: String, CodingKey {
-                case cloud_storage
-            }
-        }
         /// Configuration for a cloud-based archival writer. If this config is present, the writer is enabled and
         /// writes chunk-related data based on the tracked shards. This config also controls additional archival
         /// behavior such as block data and polling interval.
@@ -6056,30 +6017,6 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/CloudArchivalWriterConfig/archive_block_data`.
             public var archive_block_data: Swift.Bool?
-            /// Configures the external storage used by the archival node.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudArchivalWriterConfig/cloud_storage`.
-            public struct cloud_storagePayload: Codable, Hashable, Sendable {
-                /// - Remark: Generated from `#/components/schemas/CloudArchivalWriterConfig/cloud_storage/value1`.
-                public var value1: Components.Schemas.CloudStorageConfig
-                /// Creates a new `cloud_storagePayload`.
-                ///
-                /// - Parameters:
-                ///   - value1:
-                public init(value1: Components.Schemas.CloudStorageConfig) {
-                    self.value1 = value1
-                }
-                public init(from decoder: any Decoder) throws {
-                    self.value1 = try .init(from: decoder)
-                }
-                public func encode(to encoder: any Encoder) throws {
-                    try self.value1.encode(to: encoder)
-                }
-            }
-            /// Configures the external storage used by the archival node.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudArchivalWriterConfig/cloud_storage`.
-            public var cloud_storage: Components.Schemas.CloudArchivalWriterConfig.cloud_storagePayload
             /// Interval at which the system checks for new blocks or chunks to archive.
             ///
             /// - Remark: Generated from `#/components/schemas/CloudArchivalWriterConfig/polling_interval`.
@@ -6108,70 +6045,17 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - archive_block_data: Determines whether block-related data should be written to cloud storage.
-            ///   - cloud_storage: Configures the external storage used by the archival node.
             ///   - polling_interval: Interval at which the system checks for new blocks or chunks to archive.
             public init(
                 archive_block_data: Swift.Bool? = nil,
-                cloud_storage: Components.Schemas.CloudArchivalWriterConfig.cloud_storagePayload,
                 polling_interval: Components.Schemas.CloudArchivalWriterConfig.polling_intervalPayload? = nil
             ) {
                 self.archive_block_data = archive_block_data
-                self.cloud_storage = cloud_storage
                 self.polling_interval = polling_interval
             }
             public enum CodingKeys: String, CodingKey {
                 case archive_block_data
-                case cloud_storage
                 case polling_interval
-            }
-        }
-        /// Configures the external storage used by the archival node.
-        ///
-        /// - Remark: Generated from `#/components/schemas/CloudStorageConfig`.
-        public struct CloudStorageConfig: Codable, Hashable, Sendable {
-            /// Location of a json file with credentials allowing access to the bucket.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudStorageConfig/credentials_file`.
-            public var credentials_file: Swift.String?
-            /// The storage to persist the archival data.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudStorageConfig/storage`.
-            public struct storagePayload: Codable, Hashable, Sendable {
-                /// - Remark: Generated from `#/components/schemas/CloudStorageConfig/storage/value1`.
-                public var value1: Components.Schemas.ExternalStorageLocation
-                /// Creates a new `storagePayload`.
-                ///
-                /// - Parameters:
-                ///   - value1:
-                public init(value1: Components.Schemas.ExternalStorageLocation) {
-                    self.value1 = value1
-                }
-                public init(from decoder: any Decoder) throws {
-                    self.value1 = try .init(from: decoder)
-                }
-                public func encode(to encoder: any Encoder) throws {
-                    try self.value1.encode(to: encoder)
-                }
-            }
-            /// The storage to persist the archival data.
-            ///
-            /// - Remark: Generated from `#/components/schemas/CloudStorageConfig/storage`.
-            public var storage: Components.Schemas.CloudStorageConfig.storagePayload
-            /// Creates a new `CloudStorageConfig`.
-            ///
-            /// - Parameters:
-            ///   - credentials_file: Location of a json file with credentials allowing access to the bucket.
-            ///   - storage: The storage to persist the archival data.
-            public init(
-                credentials_file: Swift.String? = nil,
-                storage: Components.Schemas.CloudStorageConfig.storagePayload
-            ) {
-                self.credentials_file = credentials_file
-                self.storage = storage
-            }
-            public enum CodingKeys: String, CodingKey {
-                case credentials_file
-                case storage
             }
         }
         /// - Remark: Generated from `#/components/schemas/CompilationError`.
@@ -10043,13 +9927,15 @@ public enum Components {
                 case num_concurrent_requests_during_catchup
             }
         }
+        /// Supported external storage backends and their minimal config.
+        ///
         /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation`.
         @frozen public enum ExternalStorageLocation: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case1`.
             public struct Case1Payload: Codable, Hashable, Sendable {
                 /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case1/S3`.
                 public struct S3Payload: Codable, Hashable, Sendable {
-                    /// Location of state dumps on S3.
+                    /// Location on S3.
                     ///
                     /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case1/S3/bucket`.
                     public var bucket: Swift.String
@@ -10060,7 +9946,7 @@ public enum Components {
                     /// Creates a new `S3Payload`.
                     ///
                     /// - Parameters:
-                    ///   - bucket: Location of state dumps on S3.
+                    ///   - bucket: Location on S3.
                     ///   - region: Data may only be available in certain locations.
                     public init(
                         bucket: Swift.String,
@@ -10099,6 +9985,8 @@ public enum Components {
             }
             /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case1`.
             case case1(Components.Schemas.ExternalStorageLocation.Case1Payload)
+            /// Local filesystem root for storing data.
+            ///
             /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case2`.
             public struct Case2Payload: Codable, Hashable, Sendable {
                 /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case2/Filesystem`.
@@ -10139,8 +10027,12 @@ public enum Components {
                     ])
                 }
             }
+            /// Local filesystem root for storing data.
+            ///
             /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case2`.
             case case2(Components.Schemas.ExternalStorageLocation.Case2Payload)
+            /// Google Cloud Storage bucket name.
+            ///
             /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case3`.
             public struct Case3Payload: Codable, Hashable, Sendable {
                 /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case3/GCS`.
@@ -10181,6 +10073,8 @@ public enum Components {
                     ])
                 }
             }
+            /// Google Cloud Storage bucket name.
+            ///
             /// - Remark: Generated from `#/components/schemas/ExternalStorageLocation/case3`.
             case case3(Components.Schemas.ExternalStorageLocation.Case3Payload)
             public init(from decoder: any Decoder) throws {
@@ -17818,7 +17712,7 @@ public enum Components {
         @frozen public enum NonDelegateAction: Codable, Hashable, Sendable {
             /// Create an (sub)account using a transaction `receiver_id` as an ID for
             /// a new account ID must pass validation rules described here
-            /// <http://nomicon.io/Primitives/Account.html>.
+            /// <https://nomicon.io/DataStructures/Account>.
             ///
             /// - Remark: Generated from `#/components/schemas/NonDelegateAction/case1`.
             public struct Case1Payload: Codable, Hashable, Sendable {
@@ -17847,7 +17741,7 @@ public enum Components {
             }
             /// Create an (sub)account using a transaction `receiver_id` as an ID for
             /// a new account ID must pass validation rules described here
-            /// <http://nomicon.io/Primitives/Account.html>.
+            /// <https://nomicon.io/DataStructures/Account>.
             ///
             /// - Remark: Generated from `#/components/schemas/NonDelegateAction/case1`.
             case case1(Components.Schemas.NonDelegateAction.Case1Payload)
@@ -19802,57 +19696,6 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/client_background_migration_threads`.
             public var client_background_migration_threads: Swift.Int
-            /// Configuration for a cloud-based archival reader.
-            ///
-            /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/cloud_archival_reader`.
-            public struct cloud_archival_readerPayload: Codable, Hashable, Sendable {
-                /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/cloud_archival_reader/value1`.
-                public var value1: Components.Schemas.CloudArchivalReaderConfig?
-                /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/cloud_archival_reader/value2`.
-                public var value2: OpenAPIRuntime.OpenAPIValueContainer?
-                /// Creates a new `cloud_archival_readerPayload`.
-                ///
-                /// - Parameters:
-                ///   - value1:
-                ///   - value2:
-                public init(
-                    value1: Components.Schemas.CloudArchivalReaderConfig? = nil,
-                    value2: OpenAPIRuntime.OpenAPIValueContainer? = nil
-                ) {
-                    self.value1 = value1
-                    self.value2 = value2
-                }
-                public init(from decoder: any Decoder) throws {
-                    var errors: [any Error] = []
-                    do {
-                        self.value1 = try .init(from: decoder)
-                    } catch {
-                        errors.append(error)
-                    }
-                    do {
-                        self.value2 = try .init(from: decoder)
-                    } catch {
-                        errors.append(error)
-                    }
-                    try Swift.DecodingError.verifyAtLeastOneSchemaIsNotNil(
-                        [
-                            self.value1,
-                            self.value2
-                        ],
-                        type: Self.self,
-                        codingPath: decoder.codingPath,
-                        errors: errors
-                    )
-                }
-                public func encode(to encoder: any Encoder) throws {
-                    try self.value1?.encode(to: encoder)
-                    try self.value2?.encode(to: encoder)
-                }
-            }
-            /// Configuration for a cloud-based archival reader.
-            ///
-            /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/cloud_archival_reader`.
-            public var cloud_archival_reader: Components.Schemas.RpcClientConfigResponse.cloud_archival_readerPayload?
             /// Configuration for a cloud-based archival writer. If this config is present, the writer is enabled and
             /// writes chunk-related data based on the tracked shards.
             ///
@@ -19910,6 +19753,13 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/doomslug_step_period`.
             public var doomslug_step_period: [Swift.Int]
+            /// If true, transactions for the next chunk will be prepared early, right after the previous chunk's
+            /// post-state is ready. This can help produce chunks faster, for high-throughput chains.
+            /// The current implementation increases latency on low-load chains, which will be fixed in the future.
+            /// The default is disabled.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/enable_early_prepare_transactions`.
+            public var enable_early_prepare_transactions: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/RpcClientConfigResponse/enable_multiline_logging`.
             public var enable_multiline_logging: Swift.Bool
             /// Re-export storage layer statistics as prometheus metrics.
@@ -20338,9 +20188,9 @@ public enum Components {
             ///   - chunk_validation_threads: Number of threads for ChunkValidationActor pool.
             ///   - chunk_wait_mult: Multiplier for the wait time for all chunks to be received.
             ///   - client_background_migration_threads: Number of threads to execute background migration work in client.
-            ///   - cloud_archival_reader: Configuration for a cloud-based archival reader.
             ///   - cloud_archival_writer: Configuration for a cloud-based archival writer. If this config is present, the writer is enabled and
             ///   - doomslug_step_period: Time between running doomslug timer.
+            ///   - enable_early_prepare_transactions: If true, transactions for the next chunk will be prepared early, right after the previous chunk's
             ///   - enable_multiline_logging:
             ///   - enable_statistics_export: Re-export storage layer statistics as prometheus metrics.
             ///   - epoch_length: Epoch length.
@@ -20405,9 +20255,9 @@ public enum Components {
                 chunk_validation_threads: Swift.Int,
                 chunk_wait_mult: [Swift.Int32],
                 client_background_migration_threads: Swift.Int,
-                cloud_archival_reader: Components.Schemas.RpcClientConfigResponse.cloud_archival_readerPayload? = nil,
                 cloud_archival_writer: Components.Schemas.RpcClientConfigResponse.cloud_archival_writerPayload? = nil,
                 doomslug_step_period: [Swift.Int],
+                enable_early_prepare_transactions: Swift.Bool,
                 enable_multiline_logging: Swift.Bool,
                 enable_statistics_export: Swift.Bool,
                 epoch_length: Swift.Int,
@@ -20472,9 +20322,9 @@ public enum Components {
                 self.chunk_validation_threads = chunk_validation_threads
                 self.chunk_wait_mult = chunk_wait_mult
                 self.client_background_migration_threads = client_background_migration_threads
-                self.cloud_archival_reader = cloud_archival_reader
                 self.cloud_archival_writer = cloud_archival_writer
                 self.doomslug_step_period = doomslug_step_period
+                self.enable_early_prepare_transactions = enable_early_prepare_transactions
                 self.enable_multiline_logging = enable_multiline_logging
                 self.enable_statistics_export = enable_statistics_export
                 self.epoch_length = epoch_length
@@ -20540,9 +20390,9 @@ public enum Components {
                 case chunk_validation_threads
                 case chunk_wait_mult
                 case client_background_migration_threads
-                case cloud_archival_reader
                 case cloud_archival_writer
                 case doomslug_step_period
+                case enable_early_prepare_transactions
                 case enable_multiline_logging
                 case enable_statistics_export
                 case epoch_length
@@ -30359,6 +30209,14 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/VMConfigView/limit_config`.
             public var limit_config: Components.Schemas.VMConfigView.limit_configPayload
+            /// Base gas cost of a linear operation
+            ///
+            /// - Remark: Generated from `#/components/schemas/VMConfigView/linear_op_base_cost`.
+            public var linear_op_base_cost: Swift.Int
+            /// Unit gas cost of a linear operation
+            ///
+            /// - Remark: Generated from `#/components/schemas/VMConfigView/linear_op_unit_cost`.
+            public var linear_op_unit_cost: Swift.Int
             /// See [VMConfig::reftypes_bulk_memory](crate::vm::Config::reftypes_bulk_memory).
             ///
             /// - Remark: Generated from `#/components/schemas/VMConfigView/reftypes_bulk_memory`.
@@ -30431,6 +30289,8 @@ public enum Components {
             ///   - grow_mem_cost: Gas cost of a growing memory by single page.
             ///   - implicit_account_creation: See [VMConfig::implicit_account_creation](crate::vm::Config::implicit_account_creation).
             ///   - limit_config: Describes limits for VM and Runtime.
+            ///   - linear_op_base_cost: Base gas cost of a linear operation
+            ///   - linear_op_unit_cost: Unit gas cost of a linear operation
             ///   - reftypes_bulk_memory: See [VMConfig::reftypes_bulk_memory](crate::vm::Config::reftypes_bulk_memory).
             ///   - regular_op_cost: Gas cost of a regular operation.
             ///   - saturating_float_to_int: See [VMConfig::saturating_float_to_int](crate::vm::Config::saturating_float_to_int).
@@ -30446,6 +30306,8 @@ public enum Components {
                 grow_mem_cost: Swift.Int,
                 implicit_account_creation: Swift.Bool,
                 limit_config: Components.Schemas.VMConfigView.limit_configPayload,
+                linear_op_base_cost: Swift.Int,
+                linear_op_unit_cost: Swift.Int,
                 reftypes_bulk_memory: Swift.Bool,
                 regular_op_cost: Swift.Int,
                 saturating_float_to_int: Swift.Bool,
@@ -30461,6 +30323,8 @@ public enum Components {
                 self.grow_mem_cost = grow_mem_cost
                 self.implicit_account_creation = implicit_account_creation
                 self.limit_config = limit_config
+                self.linear_op_base_cost = linear_op_base_cost
+                self.linear_op_unit_cost = linear_op_unit_cost
                 self.reftypes_bulk_memory = reftypes_bulk_memory
                 self.regular_op_cost = regular_op_cost
                 self.saturating_float_to_int = saturating_float_to_int
@@ -30477,6 +30341,8 @@ public enum Components {
                 case grow_mem_cost
                 case implicit_account_creation
                 case limit_config
+                case linear_op_base_cost
+                case linear_op_unit_cost
                 case reftypes_bulk_memory
                 case regular_op_cost
                 case saturating_float_to_int
