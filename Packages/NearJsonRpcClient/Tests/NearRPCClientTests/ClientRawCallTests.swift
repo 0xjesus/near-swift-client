@@ -39,7 +39,7 @@ final class ClientRawCallTests: XCTestCase {
         struct Result: Decodable {
             let data: Int
         }
-        let result: Result = try await makeClient().rawCall(method: "test", params: Optional<[String: String]>.none)
+        let result: Result = try await makeClient().rawCall(method: "test", params: [String: String]?.none)
         XCTAssertEqual(result.data, 123)
     }
 }

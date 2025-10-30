@@ -47,15 +47,23 @@ let client = NearJsonRpcClient(.init(
 ))
 
 // Get latest block
-let block = try await client.block(.init(finality: .final))
-print("Block height:", block.header?.height ?? 0)
+let latestBlock = try await client.block(blockReference: .finality(.final))
+print("Latest block height:", latestBlock.header.height)
+
+// Get block by height
+let block = try await client.block(blockReference: .blockId(latestBlock.header.height - 100))
+print("Block at height \(block.header.height) has hash: \(block.header.hash)")
 
 // Query account
-let account = try await client.viewAccount(.init(
+let account = try await client.viewAccount(accountId: "example.testnet")
+print("Balance for example.testnet: \(account.amount)")
+
+// Query account at a specific block
+let accountAtBlock = try await client.viewAccount(
     accountId: "example.testnet",
-    finality: .final
-))
-print("Balance:", account.amount?.value ?? "0")
+    blockReference: .blockHash(block.header.hash)
+)
+print("Balance at block \(block.header.height): \(accountAtBlock.amount)")
 ```
 
 ## Development

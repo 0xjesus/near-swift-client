@@ -3,7 +3,7 @@ import Foundation
 public struct BlockParams: Encodable {
     public let blockId: JSONValue?
     public let finality: Finality?
-    
+
     public init(blockId: JSONValue? = nil, finality: Finality? = .final) {
         self.blockId = blockId
         self.finality = finality
@@ -13,7 +13,7 @@ public struct BlockParams: Encodable {
 public struct ChunkParams: Encodable {
     public let chunkId: JSONValue?
     public let blockId: JSONValue?
-    
+
     public init(chunkId: JSONValue? = nil, blockId: JSONValue? = nil) {
         self.chunkId = chunkId
         self.blockId = blockId
@@ -25,14 +25,14 @@ public struct ViewAccountParams: Encodable {
     public let accountId: AccountId
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case requestType = "request_type"
         case accountId = "account_id"
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountId: AccountId, finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountId = accountId
         self.finality = finality
@@ -45,14 +45,14 @@ public struct ViewCodeParams: Encodable {
     public let accountId: AccountId
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case requestType = "request_type"
         case accountId = "account_id"
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountId: AccountId, finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountId = accountId
         self.finality = finality
@@ -66,7 +66,7 @@ public struct ViewStateParams: Encodable {
     public let prefixBase64: Base64String
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case requestType = "request_type"
         case accountId = "account_id"
@@ -74,7 +74,7 @@ public struct ViewStateParams: Encodable {
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountId: AccountId, prefixBase64: Base64String, finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountId = accountId
         self.prefixBase64 = prefixBase64
@@ -89,7 +89,7 @@ public struct ViewAccessKeyParams: Encodable {
     public let publicKey: PublicKey
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case requestType = "request_type"
         case accountId = "account_id"
@@ -97,7 +97,7 @@ public struct ViewAccessKeyParams: Encodable {
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountId: AccountId, publicKey: PublicKey, finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountId = accountId
         self.publicKey = publicKey
@@ -111,14 +111,14 @@ public struct ViewAccessKeyListParams: Encodable {
     public let accountId: AccountId
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case requestType = "request_type"
         case accountId = "account_id"
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountId: AccountId, finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountId = accountId
         self.finality = finality
@@ -133,7 +133,7 @@ public struct CallFunctionParams: Encodable {
     public let argsBase64: Base64String
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case requestType = "request_type"
         case accountId = "account_id"
@@ -142,7 +142,7 @@ public struct CallFunctionParams: Encodable {
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountId: AccountId, methodName: String, argsBase64: Base64String, finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountId = accountId
         self.methodName = methodName
@@ -157,14 +157,14 @@ public struct ChangesAccountParams: Encodable {
     public let accountIds: [AccountId]
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case changesType = "changes_type"
         case accountIds = "account_ids"
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(accountIds: [AccountId], finality: Finality? = .optimistic, blockId: JSONValue? = nil) {
         self.accountIds = accountIds
         self.finality = finality
@@ -178,15 +178,15 @@ public struct SendTxParams: Encodable {
         case executedOptimistic = "executed_optimistic"
         case executed, final
     }
-    
+
     public let signedTxBase64: String
     public let waitUntil: WaitUntil?
-    
+
     enum CodingKeys: String, CodingKey {
         case signedTxBase64 = "signed_tx_base64"
         case waitUntil = "wait_until"
     }
-    
+
     public init(signedTxBase64: String, waitUntil: WaitUntil? = nil) {
         self.signedTxBase64 = signedTxBase64
         self.waitUntil = waitUntil
@@ -196,14 +196,14 @@ public struct SendTxParams: Encodable {
 public struct ValidatorsParams: Encodable {
     public let epochId: String?
     public let blockId: JSONValue?
-    
+
     public static let current = ValidatorsParams(epochId: nil, blockId: nil)
-    
+
     enum CodingKeys: String, CodingKey {
         case epochId = "epoch_id"
         case blockId = "block_id"
     }
-    
+
     public init(epochId: String? = nil, blockId: JSONValue? = nil) {
         self.epochId = epochId
         self.blockId = blockId
@@ -213,12 +213,12 @@ public struct ValidatorsParams: Encodable {
 public struct ProtocolConfigParams: Encodable {
     public let finality: Finality?
     public let blockId: JSONValue?
-    
+
     enum CodingKeys: String, CodingKey {
         case finality
         case blockId = "block_id"
     }
-    
+
     public init(finality: Finality? = .final, blockId: JSONValue? = nil) {
         self.finality = finality
         self.blockId = blockId
@@ -228,12 +228,12 @@ public struct ProtocolConfigParams: Encodable {
 public struct TxStatusParams: Encodable {
     public let txHash: String
     public let senderId: String
-    
+
     enum CodingKeys: String, CodingKey {
         case txHash = "tx_hash"
         case senderId = "sender_id"
     }
-    
+
     public init(txHash: String, senderId: String) {
         self.txHash = txHash
         self.senderId = senderId
@@ -243,12 +243,12 @@ public struct TxStatusParams: Encodable {
 public struct LightClientProofParams: Encodable {
     public let outcomeId: String
     public let lightClientHead: String
-    
+
     enum CodingKeys: String, CodingKey {
         case outcomeId = "outcome_id"
         case lightClientHead = "light_client_head"
     }
-    
+
     public init(outcomeId: String, lightClientHead: String) {
         self.outcomeId = outcomeId
         self.lightClientHead = lightClientHead

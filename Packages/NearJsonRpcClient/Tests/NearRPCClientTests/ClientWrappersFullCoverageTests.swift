@@ -151,7 +151,7 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
         struct Response: Decodable {
             let data: String
         }
-        let _: Response = try await makeClient().call(method: "no_params_method", params: Optional<[String: String]>.none)
+        let _: Response = try await makeClient().call(method: "no_params_method", params: [String: String]?.none)
     }
 
     func testBlockCoverage() async throws {
@@ -163,14 +163,14 @@ final class ClientWrappersFullCoverageTests: XCTestCase {
                     "epoch_id": "epoch123",
                     "prev_hash": "prev123",
                     "prev_state_root": "state123",
-                    "timestamp": 1000000,
+                    "timestamp": 1_000_000,
                     "timestamp_nanosec": "1000000000",
                     "random_value": "random123",
                     "gas_price": "100000000",
                     "total_supply": "1000000000000000000000000",
-                    "challenges_root": "challenges123"
+                    "challenges_root": "challenges123",
                 ],
-                "chunks": []
+                "chunks": [],
             ]
             let out = ["jsonrpc": "2.0", "id": "1", "result": result]
             let body = try JSONSerialization.data(withJSONObject: out)
