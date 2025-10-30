@@ -108,6 +108,6 @@ final class ClientWrapperCallTests: XCTestCase {
             return (response, body)
         }
 
-        await XCTAssertThrowsError(try await client.status())
+        await XCTAssertThrowsError(try client.status())
     }
 }

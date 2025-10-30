@@ -9,14 +9,14 @@ final class TestHelpersTests: XCTestCase {
         XCTAssertEqual(err.message, "Server error")
         XCTAssertNotNil(err.data)
     }
-    
+
     func testJsonRpcErrorObjectInitWithoutData() {
         let err = JsonRpcErrorObject(code: -32600, message: "Invalid request")
         XCTAssertEqual(err.code, -32600)
         XCTAssertEqual(err.message, "Invalid request")
         XCTAssertNil(err.data)
     }
-    
+
     func testJsonRpcErrorObjectEncodeDecode() throws {
         let original = JsonRpcErrorObject(code: -32601, message: "Method not found", data: .object(["key": .string("value")]))
         let encoded = try JSONEncoder().encode(original)

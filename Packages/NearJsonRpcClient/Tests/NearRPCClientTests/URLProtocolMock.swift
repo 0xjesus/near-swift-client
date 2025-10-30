@@ -1,6 +1,6 @@
 import Foundation
 
-internal extension InputStream {
+extension InputStream {
     func readAll() -> Data {
         open()
         defer { close() }

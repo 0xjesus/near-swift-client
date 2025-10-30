@@ -5,15 +5,15 @@ let package = Package(
     name: "QuickDemo",
     platforms: [.macOS(.v13)],
     dependencies: [
-        .package(path: "../..")
+        .package(path: "../.."),
     ],
     targets: [
         .executableTarget(
             name: "QuickDemo",
             dependencies: [
                 .product(name: "NearJsonRpcClient", package: "near-swift-client"),
-                .product(name: "NearJsonRpcTypes", package: "near-swift-client")
+                .product(name: "NearJsonRpcTypes", package: "near-swift-client"),
             ]
-        )
+        ),
     ]
 )

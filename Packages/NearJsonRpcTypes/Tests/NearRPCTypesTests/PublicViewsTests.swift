@@ -8,7 +8,7 @@ final class PublicViewsTests: XCTestCase {
         XCTAssertEqual(view.blockHeight, 123)
         XCTAssertEqual(view.blockHash, "abc")
     }
-    
+
     func testNearGasPriceViewEncodeDecode() throws {
         let view = NearGasPriceView(gasPrice: "200", blockHeight: 456, blockHash: "def")
         let enc = JSONEncoder()
@@ -17,7 +17,7 @@ final class PublicViewsTests: XCTestCase {
         let decoded = try dec.decode(NearGasPriceView.self, from: data)
         XCTAssertEqual(decoded, view)
     }
-    
+
     func testNearEpochValidatorInfoInit() throws {
         let info = NearEpochValidatorInfo(
             epochHeight: 100,
@@ -30,7 +30,7 @@ final class PublicViewsTests: XCTestCase {
         XCTAssertEqual(info.epochHeight, 100)
         XCTAssertEqual(info.epochStartHeight, 200)
     }
-    
+
     func testNearEpochValidatorInfoEncodeDecode() throws {
         let info = NearEpochValidatorInfo(epochHeight: 300)
         let data = try JSONEncoder().encode(info)

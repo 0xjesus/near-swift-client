@@ -5,7 +5,7 @@ let package = Package(
     name: "near-swift-client",
     platforms: [
         .macOS(.v13),
-        .iOS(.v16)
+        .iOS(.v16),
     ],
     products: [
         .library(name: "NearJsonRpcClient", targets: ["NearJsonRpcClient"]),
