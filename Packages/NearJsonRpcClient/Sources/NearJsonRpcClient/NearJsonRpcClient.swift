@@ -14,6 +14,30 @@ public typealias EpochValidatorInfo = NearJsonRpcTypes.EpochValidatorInfo
 public typealias LightClientProof = NearJsonRpcTypes.JSONValue
 public typealias LightClientBlockView = NearJsonRpcTypes.JSONValue
 
+public enum BlockReference {
+    case blockId(UInt64)
+    case blockHash(String)
+    case finality(Finality)
+
+    public enum Finality: String, Codable {
+        case final
+        case optimistic
+    }
+}
+
+internal extension BlockReference {
+    var asBlockReference: RpcBlockReference {
+        switch self {
+        case .blockId(let blockId):
+            return .init(value1: .init(block_id: .init(value1: .init(value1: blockId))))
+        case .blockHash(let blockHash):
+            return .init(value1: .init(block_id: .init(value2: .init(value1: blockHash))))
+        case .finality(let finality):
+            return .init(value1: .init(finality: finality.rawValue))
+        }
+    }
+}
+
 public final class NearJsonRpcClient {
     public struct Config {
         public let endpoint: URL
@@ -75,16 +99,29 @@ public final class NearJsonRpcClient {
         return try decoder.decode(EpochValidatorInfo.self, from: data)
     }
     
-    public func block(_ params: Components.Schemas.RpcBlockRequest) async throws -> BlockView {
-        try await call(method: "block", params: params)
+    public func block(blockReference: BlockReference) async throws -> BlockView {
+        let params: Components.Schemas.RpcBlockRequest
+        switch blockReference {
+        case .blockId(let blockId):
+            params = .init(value1: .init(block_id: .init(value1: .init(value1: blockId))))
+        case .blockHash(let blockHash):
+            params = .init(value1: .init(block_id: .init(value2: .init(value1: blockHash))))
+        case .finality(let finality):
+            params = .init(value1: .init(finality: finality.rawValue))
+        }
+        return try await call(method: "block", params: params)
     }
     
     public func chunk(_ params: Components.Schemas.RpcChunkRequest) async throws -> ChunkView {
         try await call(method: "chunk", params: params)
     }
-    
-    public func viewAccount(_ params: Components.Schemas.RpcQueryRequest) async throws -> ViewAccountResult {
-        try await call(method: "query", params: params)
+
+    public func viewAccount(accountId: String, blockReference: BlockReference = .finality(.final)) async throws -> ViewAccountResult {
+        let params = RpcQueryRequest(
+            blockReference: blockReference.asBlockReference,
+            request: .viewAccount(.init(accountId: accountId))
+        )
+        return try await call(method: "query", params: params)
     }
     
     public func viewAccessKey(_ params: Components.Schemas.RpcQueryRequest) async throws -> JSONValue {

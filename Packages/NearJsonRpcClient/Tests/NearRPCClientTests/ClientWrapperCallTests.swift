@@ -13,45 +13,101 @@ final class ClientWrapperCallTests: XCTestCase {
         super.tearDown()
     }
 
-    func testHappyPathMocked() async throws {
-        let base = URL(string: "https://rpc.testnet.near.org")!
+    func testBlockFinality() async throws {
+        let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
 
-        URLProtocolMock.handler = { req in
-            // El transporte debe forzar path "/"
-            XCTAssertEqual(URLComponents(url: req.url!, resolvingAgainstBaseURL: false)?.path, "/")
-            let body = #"{"jsonrpc":"2.0","id":"1","result":{"ok":true}}"#.data(using: .utf8)!
-            let resp = HTTPURLResponse(
-                url: req.url!, statusCode: 200, httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            return (resp, body)
+        let mockResponse = """
+        {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "author": "test.near",
+                "header": {
+                    "height": 12345,
+                    "hash": "GwNz3nssn1ZPnJGRyufdHpAQ32Bq2j5t2hS2CtJt3g9S",
+                    "timestamp": 1629825600000000000
+                },
+                "chunks": []
+            }
+        }
+        """
+
+        URLProtocolMock.handler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, mockResponse.data(using: .utf8)!)
         }
 
-        // Inicializador correcto del cliente (Config)
-        let client = NearJsonRpcClient(.init(endpoint: base))
-        _ = client
-
-        // TODO: cuando agregues un wrapper real (p.ej. gasPrice), invócalo aquí.
-        // let out = try await client.gasPrice(params: BlockParams(...))
-        // XCTAssertTrue(out.ok)
+        let block = try await client.block(blockReference: .finality(.final))
+        XCTAssertEqual(block.header.height, 12345)
+        XCTAssertEqual(block.header.hash, "GwNz3nssn1ZPnJGRyufdHpAQ32Bq2j5t2hS2CtJt3g9S")
     }
 
-    func testServerErrorMocked() async throws {
-        let base = URL(string: "https://rpc.testnet.near.org")!
+    func testBlockId() async throws {
+        let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
 
-        URLProtocolMock.handler = { req in
-            let body = #"{"jsonrpc":"2.0","id":"1","error":{"code":-32000,"message":"boom"}}"#.data(using: .utf8)!
-            let resp = HTTPURLResponse(
-                url: req.url!, statusCode: 200, httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            return (resp, body)
+        let mockResponse = """
+        {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "author": "test.near",
+                "header": {
+                    "height": 12345,
+                    "hash": "GwNz3nssn1ZPnJGRyufdHpAQ32Bq2j5t2hS2CtJt3g9S",
+                    "timestamp": 1629825600000000000
+                },
+                "chunks": []
+            }
+        }
+        """
+
+        URLProtocolMock.handler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, mockResponse.data(using: .utf8)!)
         }
 
-        let client = NearJsonRpcClient(.init(endpoint: base))
-        _ = client
+        let block = try await client.block(blockReference: .blockId(12345))
+        XCTAssertEqual(block.header.height, 12345)
+    }
 
-        // TODO: cuando haya wrapper público, valida que lance error:
-        // await XCTAssertThrowsError(try await client.gasPrice(params: ...))
+    func testViewAccount() async throws {
+        let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
+
+        let mockResponse = """
+        {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "amount": "10000000000000000000000000",
+                "locked": "0",
+                "code_hash": "11111111111111111111111111111111",
+                "storage_usage": 123,
+                "storage_paid_at": 0,
+                "block_height": 12345,
+                "block_hash": "GwNz3nssn1ZPnJGRyufdHpAQ32Bq2j5t2hS2CtJt3g9S"
+            }
+        }
+        """
+
+        URLProtocolMock.handler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, mockResponse.data(using: .utf8)!)
+        }
+
+        let account = try await client.viewAccount(accountId: "test.near")
+        XCTAssertEqual(account.amount, "10000000000000000000000000")
+        XCTAssertEqual(account.blockHeight, 12345)
+    }
+
+    func testServerError() async throws {
+        let client = NearJsonRpcClient(.init(endpoint: URL(string: "https://rpc.testnet.near.org")!))
+
+        URLProtocolMock.handler = { request in
+            let body = #"{"jsonrpc":"2.0","id":"1","error":{"code":-32000,"message":"Server error","data":"Something went wrong"}}"#.data(using: .utf8)!
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+            return (response, body)
+        }
+
+        await XCTAssertThrowsError(try await client.status())
     }
 }
